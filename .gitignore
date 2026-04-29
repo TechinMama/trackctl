@@ -1,0 +1,8 @@
+.DS_Store
+.build/
+.swiftpm/
+swiftly.pkg
+*.xcuserstate
+**/xcuserdata/
+roadmap.md
+athena-roadmap.md
