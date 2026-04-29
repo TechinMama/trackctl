@@ -23,6 +23,14 @@ variable "admin_password" {
   sensitive = true
 }
 
+variable "sku_name" {
+  type = string
+}
+
+variable "storage_mb" {
+  type = number
+}
+
 variable "tags" {
   type = map(string)
 }
@@ -33,8 +41,8 @@ resource "azurerm_postgresql_flexible_server" "this" {
   location                      = var.location
   administrator_login           = var.admin_username
   administrator_password        = var.admin_password
-  sku_name                      = "B_Standard_B1ms"
-  storage_mb                    = 32768
+  sku_name                      = var.sku_name
+  storage_mb                    = var.storage_mb
   version                       = "15"
   backup_retention_days         = 7
   public_network_access_enabled = true

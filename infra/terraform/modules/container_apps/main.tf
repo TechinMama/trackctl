@@ -32,6 +32,14 @@ variable "container_memory" {
   type = string
 }
 
+variable "min_replicas" {
+  type = number
+}
+
+variable "max_replicas" {
+  type = number
+}
+
 variable "target_port" {
   type = number
 }
@@ -99,8 +107,8 @@ resource "azurerm_container_app" "this" {
       }
     }
 
-    min_replicas = 1
-    max_replicas = 2
+    min_replicas = var.min_replicas
+    max_replicas = var.max_replicas
   }
 }
 

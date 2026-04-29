@@ -14,6 +14,10 @@ variable "location" {
   type = string
 }
 
+variable "sku" {
+  type = string
+}
+
 variable "tags" {
   type = map(string)
 }
@@ -22,7 +26,7 @@ resource "azurerm_servicebus_namespace" "this" {
   name                          = var.namespace_name
   location                      = var.location
   resource_group_name           = var.resource_group_name
-  sku                           = "Standard"
+  sku                           = var.sku
   local_auth_enabled            = true
   public_network_access_enabled = true
   tags                          = var.tags

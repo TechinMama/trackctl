@@ -26,3 +26,14 @@ terraform apply -var-file=envs/dev/dev.tfvars
 - Set `postgres_admin_password` via secure secret injection (for example, TF_VAR_postgres_admin_password in CI).
 - Container App is configured with managed identity and ACR pull assignment.
 - Fill in `container_image` with your pushed backend image before apply.
+
+## Cost-efficient dev profile
+
+The dev tfvars example is optimized for low traffic:
+
+- Container Apps scales to zero (`container_min_replicas = 0`)
+- ACR uses `Basic` SKU
+- Service Bus uses `Basic` SKU
+- Log Analytics retention is reduced to 7 days
+
+This keeps early costs lower while preserving secure defaults such as Key Vault purge protection and ACR anonymous pull disabled.

@@ -10,6 +10,10 @@ variable "location" {
   type = string
 }
 
+variable "sku" {
+  type = string
+}
+
 variable "tags" {
   type = map(string)
 }
@@ -18,7 +22,7 @@ resource "azurerm_container_registry" "this" {
   name                          = var.name
   resource_group_name           = var.resource_group_name
   location                      = var.location
-  sku                           = "Standard"
+  sku                           = var.sku
   admin_enabled                 = false
   anonymous_pull_enabled        = false
   public_network_access_enabled = true

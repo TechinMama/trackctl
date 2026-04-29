@@ -22,6 +22,7 @@ module "acr" {
   name                = replace("acr${var.project}${var.environment}", "-", "")
   resource_group_name = module.resource_group.name
   location            = module.resource_group.location
+  sku                 = var.acr_sku
   tags                = local.tags
 }
 
@@ -32,6 +33,7 @@ module "observability" {
   application_insights_name    = "appi-${local.base_name}"
   resource_group_name          = module.resource_group.name
   location                     = module.resource_group.location
+  log_retention_days           = var.log_retention_days
   tags                         = local.tags
 }
 
@@ -46,6 +48,8 @@ module "container_apps" {
   container_image              = var.container_image
   container_cpu                = var.container_cpu
   container_memory             = var.container_memory
+  min_replicas                 = var.container_min_replicas
+  max_replicas                 = var.container_max_replicas
   target_port                  = 8080
   acr_id                       = module.acr.id
   acr_login_server             = module.acr.login_server
@@ -61,6 +65,8 @@ module "postgres" {
   location             = module.resource_group.location
   admin_username       = var.postgres_admin_username
   admin_password       = var.postgres_admin_password
+  sku_name             = var.postgres_sku_name
+  storage_mb           = var.postgres_storage_mb
   tags                 = local.tags
 }
 
@@ -71,6 +77,7 @@ module "servicebus" {
   queue_name           = "notifications"
   resource_group_name  = module.resource_group.name
   location             = module.resource_group.location
+  sku                  = var.servicebus_sku
   tags                 = local.tags
 }
 
