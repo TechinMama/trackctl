@@ -71,7 +71,11 @@ actor APIService {
 
     private var liveAPIEnabled: Bool {
         if UserDefaults.standard.object(forKey: liveAPIEnabledKey) == nil {
+#if targetEnvironment(simulator)
+            return false
+#else
             return true
+#endif
         }
         return UserDefaults.standard.bool(forKey: liveAPIEnabledKey)
     }

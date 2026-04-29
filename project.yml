@@ -20,7 +20,6 @@ targets:
           - .git
           - .build
           - README.md
-          - README.iOS.md
           - LICENSE
           - swiftly.pkg
           - "# Athena – AI Prompt Contract.md"

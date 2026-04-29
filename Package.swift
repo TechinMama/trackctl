@@ -21,7 +21,6 @@ let package = Package(
                 ".build",
                 "swiftly.pkg",
                 "README.md",
-                "README.iOS.md",
                 "LICENSE",
                 "# Athena – AI Prompt Contract.md",
                 "# Athena – Demo Storyboard (VibeCon).md",

@@ -2,7 +2,7 @@
 
 **Strategic intelligence for elite performance.**
 
-Athena is an iOS app that blends sports data, AI‑powered insights, and competition awareness into a lightweight companion for athletes, fans, and analysts—starting with track & field, designed to scale across sports.
+Athena is an iOS app that blends sports data, AI-powered insights, and competition awareness into a lightweight companion for athletes, fans, and analysts, starting with track and field and designed to scale across sports.
 
 ---
 
@@ -15,14 +15,66 @@ Athena is inspired by strength through intelligence: disciplined, resilient, and
 
 ---
 
+## Architecture
+Built with SwiftUI and MVVM for a clean, maintainable iOS codebase.
+
+- Models: Athlete, Meet, Event, Result, CompetitiveStoryline
+- ViewModels: HomeViewModel, AthleteViewModel, MeetViewModel
+- Views: Home, Athletes, Meets, Settings
+- Services: APIService and NotificationService
+
+---
+
+## Tech Stack
+- **Language:** Swift  
+- **UI:** SwiftUI  
+- **Architecture:** MVVM (lightweight)  
+- **AI:** Hugging Face hosted models
+- **Minimum iOS:** 17.0
+- **Concurrency:** async/await
+
+---
+
+## API Integration
+Athena can run in local-first mode or with a live backend. Core service endpoints:
+
+- `/athletes`
+- `/meets`
+- `/events/{eventID}/results`
+- `/storylines`
+
+Analytics and insight contracts are documented in the architecture specification.
+
+---
+
 ## MVP Features
 - Home feed with key competitive storylines
 - Athlete following
 - Meet awareness + where to watch
 - AI‑generated performance insights
 - Lightweight, intentional notifications
+- Settings and preference controls
 
 See the MVP Architecture document in this repository for full details.
+
+### App Tabs
+1. Home: dashboard with storylines and upcoming meets
+2. Athletes: follow and analyze athlete profiles
+3. Meets: discover event schedules and watch context
+4. Settings: configure alerts, sources, and behavior
+
+---
+
+## Getting Started
+1. Open the project in Xcode 16+
+2. Select the Athena target and an iOS 17+ simulator
+3. Build and run
+
+### Build Commands
+```bash
+swift test
+xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS Simulator,name=iPhone 16' build CODE_SIGNING_ALLOWED=NO
+```
 
 ---
 
@@ -40,8 +92,5 @@ These inputs support Athena across professional, collegiate, and high school com
 
 ---
 
-## Tech Stack
-- **Language:** Swift  
-- **UI:** SwiftUI  
-- **Architecture:** MVVM (lightweight)  
-- **AI:** Hugging Face hosted models  
+## License
+Copyright (c) 2026 Alexandra McCoy
