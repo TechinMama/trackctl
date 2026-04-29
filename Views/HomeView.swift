@@ -50,6 +50,18 @@ struct HomeView: View {
                                         .font(.caption2)
                                         .foregroundStyle(AthenaTheme.inkMuted)
                                 }
+
+                                if let generatedAt = viewModel.generatedAt {
+                                    Text("Generated: \(generatedAt.formatted(date: .abbreviated, time: .shortened))")
+                                        .font(.caption2)
+                                        .foregroundStyle(AthenaTheme.inkMuted)
+                                }
+
+                                if let warning = viewModel.dataWarning {
+                                    Text(warning)
+                                        .font(.caption)
+                                        .foregroundStyle(AthenaTheme.alert)
+                                }
                             }
                             .padding(.horizontal)
 
@@ -82,7 +94,7 @@ struct HomeView: View {
                                 }
                             }
 
-                            Text(NotificationService.sourceCitationText)
+                            Text(viewModel.sourceCitationText)
                                 .font(.caption2)
                                 .foregroundStyle(AthenaTheme.inkMuted)
                                 .padding(.horizontal)

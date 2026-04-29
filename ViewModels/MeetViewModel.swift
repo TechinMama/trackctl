@@ -10,6 +10,10 @@ class MeetViewModel {
     var isLoading = false
     var errorMessage: String?
     var lastUpdated: Date?
+    var generatedAt: Date?
+    var sourceCitationText = NotificationService.sourceCitationText
+    var dataWarning: String?
+    var isUsingFallback = false
     
     private let apiService = APIService.shared
     
@@ -17,16 +21,18 @@ class MeetViewModel {
     func loadMeets() async {
         isLoading = true
         errorMessage = nil
-        
-        do {
-            meets = try await apiService.fetchMeets()
-            upcomingMeets = meets.filter { $0.status == .upcoming }
-            lastUpdated = Date()
-            isLoading = false
-        } catch {
-            errorMessage = "Failed to load meets: \(error.localizedDescription)"
-            isLoading = false
-        }
+
+        let response = await apiService.fetchMeets()
+        meets = response.value
+        upcomingMeets = meets.filter { $0.status == .upcoming }
+        lastUpdated = response.metadata.fetchedAt
+        generatedAt = response.metadata.generatedAt
+        sourceCitationText = response.metadata.citations.isEmpty
+            ? NotificationService.sourceCitationText
+            : "Sources: \(response.metadata.citations.joined(separator: " • "))"
+        isUsingFallback = response.metadata.source == .fallback
+        dataWarning = response.metadata.warning
+        isLoading = false
     }
     
     @MainActor

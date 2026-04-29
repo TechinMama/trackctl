@@ -12,14 +12,36 @@ class NotificationService {
     private let notifyHurdlesKey = "athena.notifyHurdles"
     private let notifyDistanceKey = "athena.notifyDistance"
     private let notifyFieldKey = "athena.notifyField"
+    private let notificationDeliveryModeKey = "athena.notificationDeliveryMode"
+    private let notificationCooldownStoreKey = "athena.notificationCooldownStore"
+    private let apiBaseURLKey = "athena.apiBaseURL"
 
     enum NotificationFrequency: String {
         case low, medium, high
+    }
+
+    enum NotificationDeliveryMode: String {
+        case local
+        case backend
     }
     
     private init() {}
 
     static let sourceCitationText = "Sources: World Athletics • FloTrack • Track & Field News • LA28"
+
+    private var deliveryMode: NotificationDeliveryMode {
+        let raw = UserDefaults.standard.string(forKey: notificationDeliveryModeKey) ?? NotificationDeliveryMode.local.rawValue
+        return NotificationDeliveryMode(rawValue: raw) ?? .local
+    }
+
+    private var apiBaseURL: URL? {
+        let raw = UserDefaults.standard.string(forKey: apiBaseURLKey) ?? "http://localhost:8080"
+        return URL(string: raw)
+    }
+
+    private var session: URLSession {
+        URLSession.shared
+    }
     
     func requestAuthorization() async -> Bool {
         do {
@@ -34,6 +56,19 @@ class NotificationService {
     func scheduleAthleteResultNotification(athlete: Athlete, result: Result) {
         guard notificationsEnabled, isAthleteAlertEnabled(athleteID: athlete.id) else { return }
         guard shouldNotifyFor(eventName: result.eventName) else { return }
+        guard shouldSendNotification(identifier: "result-\(result.id)", cooldown: 10 * 60) else { return }
+
+        if deliveryMode == .backend {
+            queueBackendNotification(
+                title: "\(athlete.name) just competed!",
+                body: "\(result.placement)th place in \(result.eventName)",
+                identifier: "result-\(result.id)",
+                type: "athlete_result",
+                cooldownSeconds: Int(10 * 60)
+            )
+            return
+        }
+
         let content = UNMutableNotificationContent()
         content.title = "\(athlete.name) just competed!"
         content.body = "\(result.placement)th place in \(result.eventName)"
@@ -53,6 +88,20 @@ class NotificationService {
     func scheduleCompetingTodayNotification(athlete: Athlete, eventName: String) {
         guard notificationsEnabled, isAthleteAlertEnabled(athleteID: athlete.id) else { return }
         guard shouldNotifyFor(eventName: eventName) else { return }
+        let identifier = "competing-\(athlete.id)-\(eventName.lowercased())"
+        guard shouldSendNotification(identifier: identifier, cooldown: 6 * 3600) else { return }
+
+        if deliveryMode == .backend {
+            queueBackendNotification(
+                title: "\(athlete.name) competes today",
+                body: "\(eventName) — tap to follow along.",
+                identifier: identifier,
+                type: "athlete_competing_today",
+                cooldownSeconds: Int(6 * 3600)
+            )
+            return
+        }
+
         let content = UNMutableNotificationContent()
         content.title = "\(athlete.name) competes today"
         content.body = "\(eventName) — tap to follow along."
@@ -60,7 +109,7 @@ class NotificationService {
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         let request = UNNotificationRequest(
-            identifier: "competing-\(athlete.id)",
+            identifier: identifier,
             content: content,
             trigger: trigger
         )
@@ -104,6 +153,20 @@ class NotificationService {
     
     func scheduleMeetReminder(meet: Meet) {
         guard notificationsEnabled else { return }
+        let identifier = "meet-\(meet.id)"
+        guard shouldSendNotification(identifier: identifier, cooldown: 8 * 3600) else { return }
+
+        if deliveryMode == .backend {
+            queueBackendNotification(
+                title: "\(meet.name) starts soon",
+                body: "Get ready to watch at \(meet.location)",
+                identifier: identifier,
+                type: "meet_reminder",
+                cooldownSeconds: Int(8 * 3600)
+            )
+            return
+        }
+
         let content = UNMutableNotificationContent()
         content.title = "\(meet.name) starts soon"
         content.body = "Get ready to watch at \(meet.location)"
@@ -122,6 +185,21 @@ class NotificationService {
 
     func scheduleEventReminder(event: Event, meet: Meet) {
         guard notificationsEnabled else { return }
+        let identifier = reminderIdentifier(for: event.id)
+        guard shouldSendNotification(identifier: identifier, cooldown: 10 * 60) else { return }
+
+        if deliveryMode == .backend {
+            queueBackendNotification(
+                title: "\(event.name) starts soon",
+                body: "\(meet.name) • \(meet.location)",
+                identifier: identifier,
+                type: "event_reminder",
+                cooldownSeconds: Int(10 * 60)
+            )
+            setEventReminderEnabled(eventID: event.id, enabled: true)
+            return
+        }
+
         let content = UNMutableNotificationContent()
         content.title = "\(event.name) starts soon"
         content.body = "\(meet.name) • \(meet.location)"
@@ -138,7 +216,7 @@ class NotificationService {
         }
 
         let request = UNNotificationRequest(
-            identifier: reminderIdentifier(for: event.id),
+            identifier: identifier,
             content: content,
             trigger: trigger
         )
@@ -250,6 +328,85 @@ class NotificationService {
         return UserDefaults.standard.bool(forKey: key)
     }
 
+    private var cooldownStore: [String: TimeInterval] {
+        get { UserDefaults.standard.dictionary(forKey: notificationCooldownStoreKey) as? [String: TimeInterval] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: notificationCooldownStoreKey) }
+    }
+
+    private func shouldSendNotification(identifier: String, cooldown: TimeInterval) -> Bool {
+        let now = Date().timeIntervalSince1970
+        let store = cooldownStore
+        if let lastSent = store[identifier], now - lastSent < cooldown {
+            return false
+        }
+        var updated = store
+        updated[identifier] = now
+        cooldownStore = updated
+        return true
+    }
+
+    private func queueBackendNotification(
+        title: String,
+        body: String,
+        identifier: String,
+        type: String,
+        cooldownSeconds: Int
+    ) {
+        Task {
+            guard let base = apiBaseURL else {
+                print("Failed to queue backend notification: invalid base URL")
+                return
+            }
+
+            let endpoint = base.appendingPathComponent("notifications/queue")
+            var request = URLRequest(url: endpoint)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let payload = BackendNotificationQueueRequest(
+                id: identifier,
+                type: type,
+                title: title,
+                body: body,
+                scheduledFor: ISO8601DateFormatter().string(from: Date()),
+                cooldownSeconds: cooldownSeconds,
+                userContext: .init(
+                    followedAthleteId: nil,
+                    eventGroup: inferEventGroup(from: "\(title) \(body)"),
+                    frequency: notificationFrequency.rawValue
+                ),
+                analytics: nil
+            )
+
+            do {
+                request.httpBody = try JSONEncoder().encode(payload)
+                let (_, response) = try await session.data(for: request)
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    print("Failed to queue backend notification: status \(http.statusCode)")
+                }
+            } catch {
+                print("Failed to queue backend notification: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func inferEventGroup(from text: String) -> String {
+        let lower = text.lowercased()
+        if lower.contains("hurd") {
+            return "hurdles"
+        }
+        if lower.contains("100m") || lower.contains("200m") || lower.contains("400m") || lower.contains("sprint") {
+            return "sprints"
+        }
+        if lower.contains("800m") || lower.contains("1500m") || lower.contains("5000m") || lower.contains("10000m") || lower.contains("marathon") {
+            return "distance"
+        }
+        if lower.contains("vault") || lower.contains("jump") || lower.contains("throw") || lower.contains("field") {
+            return "field"
+        }
+        return "mixed"
+    }
+
     func resetNotificationPreferences() {
         let defaults = UserDefaults.standard
         [
@@ -260,9 +417,34 @@ class NotificationService {
             notifySprintsKey,
             notifyHurdlesKey,
             notifyDistanceKey,
-            notifyFieldKey
+            notifyFieldKey,
+            notificationDeliveryModeKey,
+            notificationCooldownStoreKey
         ].forEach { defaults.removeObject(forKey: $0) }
 
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+}
+
+private struct BackendNotificationQueueRequest: Codable {
+    let id: String
+    let type: String
+    let title: String
+    let body: String
+    let scheduledFor: String
+    let cooldownSeconds: Int
+    let userContext: UserContext
+    let analytics: AnalyticsContext?
+
+    struct UserContext: Codable {
+        let followedAthleteId: String?
+        let eventGroup: String
+        let frequency: String
+    }
+
+    struct AnalyticsContext: Codable {
+        let feature: String
+        let score: Int
+        let band: String
     }
 }

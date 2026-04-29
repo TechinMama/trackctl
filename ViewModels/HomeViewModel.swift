@@ -9,6 +9,10 @@ class HomeViewModel {
     var isLoading = false
     var errorMessage: String?
     var lastUpdated: Date?
+    var generatedAt: Date?
+    var sourceCitationText = NotificationService.sourceCitationText
+    var dataWarning: String?
+    var isUsingFallback = false
     
     private let apiService = APIService.shared
     private let followedIDsKey = "athena.followedAthleteIDs"
@@ -17,20 +21,27 @@ class HomeViewModel {
     func loadDashboard() async {
         isLoading = true
         errorMessage = nil
+        dataWarning = nil
+        isUsingFallback = false
         
-        do {
-            async let storylinesTask = apiService.fetchCompetitiveStorylines()
-            async let meetsTask = apiService.fetchUpcomingMeets()
-            
-            let (fetchedStorylines, fetchedMeets) = try await (storylinesTask, meetsTask)
-            self.storylines = rankStorylines(fetchedStorylines)
-            self.upcomingMeets = fetchedMeets
-            self.lastUpdated = Date()
-            isLoading = false
-        } catch {
-            errorMessage = "Failed to load dashboard: \(error.localizedDescription)"
-            isLoading = false
-        }
+        async let storylinesTask = apiService.fetchCompetitiveStorylines()
+        async let meetsTask = apiService.fetchUpcomingMeets()
+
+        let (storylineResponse, meetResponse) = await (storylinesTask, meetsTask)
+        self.storylines = rankStorylines(storylineResponse.value)
+        self.upcomingMeets = meetResponse.value
+
+        let fetchedTimes = [storylineResponse.metadata.fetchedAt, meetResponse.metadata.fetchedAt]
+        self.lastUpdated = fetchedTimes.max()
+        self.generatedAt = [storylineResponse.metadata.generatedAt, meetResponse.metadata.generatedAt].compactMap { $0 }.max()
+
+        let citations = Array(Set(storylineResponse.metadata.citations + meetResponse.metadata.citations)).sorted()
+        self.sourceCitationText = citations.isEmpty ? NotificationService.sourceCitationText : "Sources: \(citations.joined(separator: " • "))"
+
+        self.isUsingFallback = storylineResponse.metadata.source == .fallback || meetResponse.metadata.source == .fallback
+        let warnings = [storylineResponse.metadata.warning, meetResponse.metadata.warning].compactMap { $0 }
+        self.dataWarning = warnings.first
+        isLoading = false
     }
 
     private func rankStorylines(_ items: [CompetitiveStoryline]) -> [CompetitiveStoryline] {

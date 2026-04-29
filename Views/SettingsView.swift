@@ -13,6 +13,9 @@ struct SettingsView: View {
     @AppStorage("athena.notifyHurdles") private var notifyHurdles = true
     @AppStorage("athena.notifyDistance") private var notifyDistance = true
     @AppStorage("athena.notifyField") private var notifyField = true
+    @AppStorage("athena.liveAPIEnabled") private var liveAPIEnabled = true
+    @AppStorage("athena.apiBaseURL") private var apiBaseURL = "http://localhost:8080"
+    @AppStorage("athena.notificationDeliveryMode") private var notificationDeliveryMode = "local"
     
     var body: some View {
         NavigationStack {
@@ -34,6 +37,10 @@ struct SettingsView: View {
                         Toggle("Enable Notifications", isOn: $notificationsEnabled)
                         Toggle("Intelligent Insights", isOn: $intelligentInsightsEnabled)
                         Toggle("Auto Refresh Data", isOn: $autoRefresh)
+
+                        Text("Intelligent Insights are filtered through Athena guardrails before display.")
+                            .font(.caption)
+                            .foregroundStyle(AthenaTheme.stone)
                     }
 
                     Section("Notification Frequency") {
@@ -56,6 +63,30 @@ struct SettingsView: View {
                         Toggle("Field", isOn: $notifyField)
 
                         Text("Use these filters to keep notifications focused on the disciplines you care about.")
+                            .font(.caption)
+                            .foregroundStyle(AthenaTheme.stone)
+                    }
+
+                    Section("Data Source") {
+                        Toggle("Use Live API", isOn: $liveAPIEnabled)
+
+                        TextField("Base URL", text: $apiBaseURL)
+                            .textInputAutocapitalization(.never)
+                            .disableAutocorrection(true)
+                            .keyboardType(.URL)
+
+                        Text("If live API is unavailable, Athena automatically falls back to local data.")
+                            .font(.caption)
+                            .foregroundStyle(AthenaTheme.stone)
+                    }
+
+                    Section("Notification Delivery") {
+                        Picker("Delivery Mode", selection: $notificationDeliveryMode) {
+                            Text("Local Device").tag("local")
+                            Text("Backend Queue").tag("backend")
+                        }
+
+                        Text("Backend Queue mode prepares notifications for server-side scheduling and cooldown enforcement.")
                             .font(.caption)
                             .foregroundStyle(AthenaTheme.stone)
                     }
