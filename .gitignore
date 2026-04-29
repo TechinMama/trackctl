@@ -9,3 +9,5 @@ athena-roadmap.md
 .venv/
 .venv-*/
 **/.pytest_cache/
+**/__pycache__/
+*.pyc
