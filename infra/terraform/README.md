@@ -19,6 +19,10 @@ cd infra/terraform
 terraform init
 terraform plan -var-file=envs/dev/dev.tfvars
 terraform apply -var-file=envs/dev/dev.tfvars
+
+# Production profile
+terraform plan -var-file=envs/prod/prod.tfvars
+terraform apply -var-file=envs/prod/prod.tfvars
 ```
 
 ## Notes
@@ -37,3 +41,7 @@ The dev tfvars example is optimized for low traffic:
 - Log Analytics retention is reduced to 7 days
 
 This keeps early costs lower while preserving secure defaults such as Key Vault purge protection and ACR anonymous pull disabled.
+
+## Production profile
+
+Use `envs/prod/prod.tfvars.example` as your production starting point. It keeps predictable baseline capacity (`min_replicas = 1`) and uses Standard SKUs where production resilience and throughput matter.

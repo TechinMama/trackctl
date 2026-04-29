@@ -76,6 +76,13 @@ swift test
 xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS Simulator,name=iPhone 16' build CODE_SIGNING_ALLOWED=NO
 ```
 
+## Cost Guardrails
+- Start dev with the low-traffic Terraform profile (`infra/terraform/envs/dev/dev.tfvars.example`) and scale to zero where safe.
+- Keep production on a baseline profile (`infra/terraform/envs/prod/prod.tfvars.example`) with `min_replicas >= 1`.
+- Increase replicas, DB SKU, and queue tier only when metrics show sustained demand.
+- Keep short log retention in dev and extend retention only for compliance or incident response needs.
+- Review Azure spend and utilization monthly before changing SKU tiers.
+
 ---
 
 ## Reference Inputs
