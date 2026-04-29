@@ -1,0 +1,131 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @Environment(HomeViewModel.self) var homeViewModel
+    @Environment(AthleteViewModel.self) var athleteViewModel
+    @Environment(MeetViewModel.self) var meetViewModel
+
+    @AppStorage("athena.notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("athena.intelligentInsightsEnabled") private var intelligentInsightsEnabled = true
+    @AppStorage("athena.autoRefreshEnabled") private var autoRefresh = true
+    @AppStorage("athena.notificationFrequency") private var notificationFrequency = "medium"
+    @AppStorage("athena.notifySprints") private var notifySprints = true
+    @AppStorage("athena.notifyHurdles") private var notifyHurdles = true
+    @AppStorage("athena.notifyDistance") private var notifyDistance = true
+    @AppStorage("athena.notifyField") private var notifyField = true
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AthenaBackdrop()
+
+                Form {
+                    Section {
+                        AthenaHeroHeader(
+                            title: "Settings",
+                            subtitle: "Intelligent controls for alerts, insights, and app behavior.",
+                            eyebrow: "Rapid insights"
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                    }
+
+                    Section("Preferences") {
+                        Toggle("Enable Notifications", isOn: $notificationsEnabled)
+                        Toggle("Intelligent Insights", isOn: $intelligentInsightsEnabled)
+                        Toggle("Auto Refresh Data", isOn: $autoRefresh)
+                    }
+
+                    Section("Notification Frequency") {
+                        Picker("Alert Frequency", selection: $notificationFrequency) {
+                            Text("Low").tag("low")
+                            Text("Medium").tag("medium")
+                            Text("High").tag("high")
+                        }
+                        .pickerStyle(.segmented)
+
+                        Text("Low = major alerts only, Medium = balanced, High = near real-time event awareness.")
+                            .font(.caption)
+                            .foregroundStyle(AthenaTheme.stone)
+                    }
+
+                    Section("Event Group Alerts") {
+                        Toggle("Sprints", isOn: $notifySprints)
+                        Toggle("Hurdles", isOn: $notifyHurdles)
+                        Toggle("Distance", isOn: $notifyDistance)
+                        Toggle("Field", isOn: $notifyField)
+
+                        Text("Use these filters to keep notifications focused on the disciplines you care about.")
+                            .font(.caption)
+                            .foregroundStyle(AthenaTheme.stone)
+                    }
+
+                    Section("Reset") {
+                        Button("Reset Followed Athletes") {
+                            athleteViewModel.resetFollowingPreferences()
+                        }
+
+                        Button("Reset Notification Preferences") {
+                            NotificationService.shared.resetNotificationPreferences()
+                            notificationsEnabled = true
+                            notificationFrequency = "medium"
+                            notifySprints = true
+                            notifyHurdles = true
+                            notifyDistance = true
+                            notifyField = true
+                        }
+
+                        Button(role: .destructive) {
+                            athleteViewModel.resetFollowingPreferences()
+                            NotificationService.shared.resetNotificationPreferences()
+                            notificationsEnabled = true
+                            intelligentInsightsEnabled = true
+                            autoRefresh = true
+                            notificationFrequency = "medium"
+                            notifySprints = true
+                            notifyHurdles = true
+                            notifyDistance = true
+                            notifyField = true
+
+                            Task {
+                                await homeViewModel.loadDashboard()
+                                await athleteViewModel.loadAthletes()
+                                await meetViewModel.loadMeets()
+                            }
+                        } label: {
+                            Text("Reset All Demo Preferences")
+                        }
+                    }
+                    
+                    Section("About") {
+                        HStack {
+                            Text("App Version")
+                            Spacer()
+                            Text("1.0.0")
+                                .foregroundStyle(AthenaTheme.stone)
+                        }
+                        
+                        HStack {
+                            Text("Build")
+                            Spacer()
+                            Text("2026.1")
+                                .foregroundStyle(AthenaTheme.stone)
+                        }
+                    }
+                    
+                    Section("Links") {
+                        Link("About Athena", destination: URL(string: "https://athena.example.com")!)
+                        Link("Privacy Policy", destination: URL(string: "https://athena.example.com/privacy")!)
+                        Link("Contact Support", destination: URL(string: "mailto:support@athena.example.com")!)
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Settings")
+        }
+    }
+}
+
+#Preview {
+    SettingsView()
+}
