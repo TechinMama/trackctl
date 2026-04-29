@@ -4,7 +4,8 @@ import PackageDescription
 let package = Package(
     name: "Athena",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v17),
+        .macOS(.v14)
     ],
     products: [
         .library(name: "Athena", targets: ["Athena"])
@@ -24,15 +25,26 @@ let package = Package(
                 "LICENSE",
                 "# Athena – AI Prompt Contract.md",
                 "# Athena – Demo Storyboard (VibeCon).md",
-                "# Athena – MVP Architecture & Feature Sp.md"
+                "# Athena – MVP Architecture & Feature Sp.md",
+                "Social-Lessons-Learned-Toolkit.md",
+                "VibeCon-Execution-Playbook.md",
+                "project.yml",
+                ".github",
+                "Tests",
+                "AthenaApp.swift",
+                "Theme",
+                "Views"
             ],
             sources: [
-                "AthenaApp.swift",
                 "Models",
                 "Services",
-                "ViewModels",
-                "Views"
+                "ViewModels"
             ]
+        ),
+        .testTarget(
+            name: "AthenaTests",
+            dependencies: ["Athena"],
+            path: "Tests/AthenaTests"
         )
     ]
 )

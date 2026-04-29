@@ -14,15 +14,12 @@
 		36A5BDF7602ADAF6D5C05304 /* AthleteViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAD4CBFEE602D1A85637675 /* AthleteViewModel.swift */; };
 		4135C3BC86A8A659BE4E8986 /* Meet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075CEE5765C1BBB6771C6B3F /* Meet.swift */; };
 		45B87F15B4904B506A7C0A16 /* AthenaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0FD06AD037F1060ABDF998 /* AthenaApp.swift */; };
-		53068108AF0FADBC213316BC /* package.xcworkspace in Resources */ = {isa = PBXBuildFile; fileRef = 09A13093DE28C6DCB72101DA /* package.xcworkspace */; };
 		532EAD04B5A2C83BA8E8125E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D9521D3C0EA35CE5630148B /* ContentView.swift */; };
 		73F1ABCB762914136318EDCF /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9218D52898E9B554F2F0B9F /* Result.swift */; };
 		77DFCD50FC47AB3C1B660E11 /* AthenaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0EBB283BEBBFEAF666D8D5 /* AthenaTheme.swift */; };
 		94FE7D0421C5571A7D0776BC /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09175B604E48F69880B276EE /* APIService.swift */; };
 		A966CBF9FA5AB9F955941FA8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D02F2D1C60FF1827AA6C6F3D /* SettingsView.swift */; };
 		AD7DED9DCBBAD5D0F4636CDD /* AthleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 829C007195882E8A6A5C477E /* AthleteView.swift */; };
-		BF1183D2797D852F4C4368E1 /* Athena.xcodeproj in Resources */ = {isa = PBXBuildFile; fileRef = 7278441B44BAC93DC745CC70 /* Athena.xcodeproj */; };
-		C479037FA3F955DD0039DE01 /* xcschememanagement.plist in Resources */ = {isa = PBXBuildFile; fileRef = F031D78A4B6CBACF97492B53 /* xcschememanagement.plist */; };
 		CEEE68456D1C6F305581B3D7 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F30370F96B2622E4810CBEE /* NotificationService.swift */; };
 		DCC5467FD961F7ABE870A7F8 /* CompetitiveStoryline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1719EA975DEACDB672AB7AB6 /* CompetitiveStoryline.swift */; };
 		DD4E1F5ABDE8336223E235E9 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5711ADC8220E5C4F3D241725 /* HomeView.swift */; };
@@ -245,9 +242,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BF1183D2797D852F4C4368E1 /* Athena.xcodeproj in Resources */,
-				53068108AF0FADBC213316BC /* package.xcworkspace in Resources */,
-				C479037FA3F955DD0039DE01 /* xcschememanagement.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

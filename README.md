@@ -31,8 +31,12 @@ See the MVP Architecture document in this repository for full details.
 - FloTrack rankings: https://www.flotrack.org/rankings
 - Track and Field News major results: https://trackandfieldnews.com/major-results-links/
 - LA28 athletics disciplines: https://hospitality.la28.org/en/event-discipline/athletics
+- MileSplit results and athlete coverage: https://www.milesplit.com/
+- Athletic.net performance and athlete coverage: https://www.athletic.net/
 - VibeCon agenda: https://vibecon.io/
 - Hugging Face account: https://huggingface.co/mccoyale
+
+These inputs support Athena across professional, collegiate, and high school competition layers so the product can surface breakout athletes before they are fully established on the professional circuit.
 
 ---
 

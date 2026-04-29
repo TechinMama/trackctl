@@ -1,18 +1,375 @@
 import Foundation
 
-// MARK: - Local mock data service. No network calls — local-first per MVP spec.
-@MainActor
-class APIService {
+struct APIFetchMetadata {
+    enum Source {
+        case remote
+        case local
+        case fallback
+    }
+
+    let source: Source
+    let fetchedAt: Date
+    let generatedAt: Date?
+    let staleAfter: Date
+    let citations: [String]
+    let warning: String?
+
+    var isStale: Bool {
+        Date() > staleAfter
+    }
+}
+
+struct APIResponse<Value> {
+    let value: Value
+    let metadata: APIFetchMetadata
+}
+
+private struct PersistedCacheEnvelope<Value: Codable>: Codable {
+    let value: Value
+    let fetchedAt: Date
+    let generatedAt: Date?
+    let citations: [String]
+}
+
+// MARK: - Live API service with resilient local fallback.
+actor APIService {
     static let shared = APIService()
+
+    private let session: URLSession
+    private let decoder: JSONDecoder
+    private let baseURLKey = "athena.apiBaseURL"
+    private let liveAPIEnabledKey = "athena.liveAPIEnabled"
+    private let intelligentInsightsEnabledKey = "athena.intelligentInsightsEnabled"
+    private let defaultBaseURL = "http://localhost:8080"
+    private let staleInterval: TimeInterval = 15 * 60
+    private let cacheFolderName = "athena-api-cache"
+
+    private var athleteCache: [Athlete] = MockData.athletes
+    private var meetCache: [Meet] = MockData.meets
+    private var storylineCache: [CompetitiveStoryline] = MockData.storylines
+
+    init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 8
+        config.timeoutIntervalForResource = 12
+        session = URLSession(configuration: config)
+
+        decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+    }
+
+    private enum CacheKey: String {
+        case athletes
+        case meets
+        case storylines
+
+        static func results(eventID: String) -> String {
+            "results-\(eventID)"
+        }
+    }
+
+    private var liveAPIEnabled: Bool {
+        if UserDefaults.standard.object(forKey: liveAPIEnabledKey) == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: liveAPIEnabledKey)
+    }
+
+    private var baseURL: URL? {
+        let raw = UserDefaults.standard.string(forKey: baseURLKey) ?? defaultBaseURL
+        return URL(string: raw)
+    }
+
+    private var intelligentInsightsEnabled: Bool {
+        if UserDefaults.standard.object(forKey: intelligentInsightsEnabledKey) == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: intelligentInsightsEnabledKey)
+    }
+
+    private func localMetadata(now: Date = Date()) -> APIFetchMetadata {
+        APIFetchMetadata(
+            source: .local,
+            fetchedAt: now,
+            generatedAt: nil,
+            staleAfter: now.addingTimeInterval(staleInterval),
+            citations: [NotificationService.sourceCitationText],
+            warning: nil
+        )
+    }
+
+    private func fallbackMetadata(error: Error, now: Date = Date()) -> APIFetchMetadata {
+        APIFetchMetadata(
+            source: .fallback,
+            fetchedAt: now,
+            generatedAt: nil,
+            staleAfter: now.addingTimeInterval(staleInterval),
+            citations: [NotificationService.sourceCitationText],
+            warning: "Live API unavailable; using local fallback data. \(error.localizedDescription)"
+        )
+    }
+
+    private func cachedMetadata(
+        fetchedAt: Date,
+        generatedAt: Date?,
+        citations: [String],
+        warning: String
+    ) -> APIFetchMetadata {
+        APIFetchMetadata(
+            source: .fallback,
+            fetchedAt: fetchedAt,
+            generatedAt: generatedAt,
+            staleAfter: fetchedAt.addingTimeInterval(staleInterval),
+            citations: citations.isEmpty ? [NotificationService.sourceCitationText] : citations,
+            warning: warning
+        )
+    }
+
+    private func metadata(from response: HTTPURLResponse, now: Date = Date()) -> APIFetchMetadata {
+        let generatedAt: Date?
+        if let header = response.value(forHTTPHeaderField: "X-Generated-At") {
+            generatedAt = ISO8601DateFormatter().date(from: header)
+        } else {
+            generatedAt = nil
+        }
+
+        let citations = response.value(forHTTPHeaderField: "X-Source-Citations")?
+            .split(separator: "|")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty } ?? [NotificationService.sourceCitationText]
+
+        return APIFetchMetadata(
+            source: .remote,
+            fetchedAt: now,
+            generatedAt: generatedAt,
+            staleAfter: now.addingTimeInterval(staleInterval),
+            citations: citations,
+            warning: nil
+        )
+    }
+
+    private func requestURL(path: String) -> URL? {
+        baseURL?.appendingPathComponent(path)
+    }
+
+    private func cacheDirectoryURL() -> URL? {
+        let fm = FileManager.default
+        guard let cachesRoot = fm.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let folder = cachesRoot.appendingPathComponent(cacheFolderName, isDirectory: true)
+        if !fm.fileExists(atPath: folder.path) {
+            do {
+                try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            } catch {
+                print("Failed to create API cache directory: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        return folder
+    }
+
+    private func cacheURL(for key: String) -> URL? {
+        cacheDirectoryURL()?.appendingPathComponent("\(key).json")
+    }
+
+    private func saveCachedValue<T: Codable>(key: String, value: T, metadata: APIFetchMetadata) {
+        guard let url = cacheURL(for: key) else { return }
+
+        let envelope = PersistedCacheEnvelope(
+            value: value,
+            fetchedAt: metadata.fetchedAt,
+            generatedAt: metadata.generatedAt,
+            citations: metadata.citations
+        )
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+
+        do {
+            let data = try encoder.encode(envelope)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            print("Failed to write API cache for \(key): \(error.localizedDescription)")
+        }
+    }
+
+    private func loadCachedValue<T: Codable>(key: String, as type: T.Type) -> PersistedCacheEnvelope<T>? {
+        guard let url = cacheURL(for: key), FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        do {
+            let data = try Data(contentsOf: url)
+            return try decoder.decode(PersistedCacheEnvelope<T>.self, from: data)
+        } catch {
+            print("Failed to read API cache for \(key): \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func sanitizeInsight(_ insight: String?) -> String? {
+        guard intelligentInsightsEnabled, let rawInsight = insight?.trimmingCharacters(in: .whitespacesAndNewlines), !rawInsight.isEmpty else {
+            return nil
+        }
+
+        let normalized = rawInsight
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "guaranteed", with: "likely", options: .caseInsensitive)
+            .replacingOccurrences(of: "lock", with: "strong signal", options: .caseInsensitive)
+            .replacingOccurrences(of: "sure thing", with: "credible signal", options: .caseInsensitive)
+
+        let blockedPhrases = ["bet now", "wager", "medical diagnosis", "inside information"]
+        if blockedPhrases.contains(where: { normalized.localizedCaseInsensitiveContains($0) }) {
+            return "Insight withheld until supporting evidence is available."
+        }
+
+        if normalized.count > 320 {
+            let cutoff = normalized.index(normalized.startIndex, offsetBy: 317)
+            return String(normalized[..<cutoff]) + "..."
+        }
+
+        return normalized
+    }
+
+    private func guardrailResult(_ result: Result) -> Result {
+        Result(
+            id: result.id,
+            athleteID: result.athleteID,
+            athleteName: result.athleteName,
+            eventID: result.eventID,
+            eventName: result.eventName,
+            placement: result.placement,
+            time: result.time,
+            date: result.date,
+            aiInsight: sanitizeInsight(result.aiInsight)
+        )
+    }
+
+    private func guardrailAthlete(_ athlete: Athlete) -> Athlete {
+        Athlete(
+            id: athlete.id,
+            name: athlete.name,
+            country: athlete.country,
+            discipline: athlete.discipline,
+            personalBest: athlete.personalBest,
+            profileImageURL: athlete.profileImageURL,
+            isFollowing: athlete.isFollowing,
+            recentResults: athlete.recentResults.map(guardrailResult)
+        )
+    }
+
+    private func guardrailMeet(_ meet: Meet) -> Meet {
+        Meet(
+            id: meet.id,
+            name: meet.name,
+            location: meet.location,
+            date: meet.date,
+            events: meet.events.map { event in
+                Event(
+                    id: event.id,
+                    name: event.name,
+                    discipline: event.discipline,
+                    meetID: event.meetID,
+                    scheduledTime: event.scheduledTime,
+                    results: event.results.map(guardrailResult)
+                )
+            },
+            competitiveLevel: meet.competitiveLevel,
+            watchURL: meet.watchURL,
+            status: meet.status
+        )
+    }
+
+    private func guardrailStoryline(_ storyline: CompetitiveStoryline) -> CompetitiveStoryline {
+        CompetitiveStoryline(
+            id: storyline.id,
+            title: storyline.title,
+            description: storyline.description,
+            relatedAthletes: storyline.relatedAthletes.map(guardrailAthlete),
+            relatedMeets: storyline.relatedMeets.map(guardrailMeet),
+            aiGeneratedInsight: sanitizeInsight(storyline.aiGeneratedInsight) ?? "Insight unavailable pending guardrail review.",
+            createdDate: storyline.createdDate
+        )
+    }
+
+    private func fetchRemote<T: Decodable>(_ type: T.Type, path: String) async throws -> APIResponse<T> {
+        guard let url = requestURL(path: path) else {
+            throw APIError.invalidBaseURL
+        }
+
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw APIError.httpStatus(http.statusCode)
+        }
+
+        let decoded = try decoder.decode(T.self, from: data)
+        return APIResponse(value: decoded, metadata: metadata(from: http))
+    }
+
+    private func fetchWithFallback<T: Codable>(
+        _ type: T.Type,
+        path: String,
+        cacheKey: String,
+        fallback: () -> T
+    ) async -> APIResponse<T> {
+        if !liveAPIEnabled {
+            if let persisted = loadCachedValue(key: cacheKey, as: T.self) {
+                return APIResponse(
+                    value: persisted.value,
+                    metadata: cachedMetadata(
+                        fetchedAt: persisted.fetchedAt,
+                        generatedAt: persisted.generatedAt,
+                        citations: persisted.citations,
+                        warning: "Live API disabled; using cached snapshot."
+                    )
+                )
+            }
+            return APIResponse(value: fallback(), metadata: localMetadata())
+        }
+
+        do {
+            let remote = try await fetchRemote(type, path: path)
+            saveCachedValue(key: cacheKey, value: remote.value, metadata: remote.metadata)
+            return remote
+        } catch {
+            if let persisted = loadCachedValue(key: cacheKey, as: T.self) {
+                return APIResponse(
+                    value: persisted.value,
+                    metadata: cachedMetadata(
+                        fetchedAt: persisted.fetchedAt,
+                        generatedAt: persisted.generatedAt,
+                        citations: persisted.citations,
+                        warning: "Live API unavailable; using cached snapshot. \(error.localizedDescription)"
+                    )
+                )
+            }
+            return APIResponse(value: fallback(), metadata: fallbackMetadata(error: error))
+        }
+    }
 
     // MARK: - Athletes
 
-    func fetchAthletes() async throws -> [Athlete] {
-        return MockData.athletes
+    func fetchAthletes() async -> APIResponse<[Athlete]> {
+        let response = await fetchWithFallback(
+            [Athlete].self,
+            path: "athletes",
+            cacheKey: CacheKey.athletes.rawValue
+        ) { MockData.athletes }
+        let guardedAthletes = response.value.map(guardrailAthlete)
+        athleteCache = guardedAthletes
+        return APIResponse(value: guardedAthletes, metadata: response.metadata)
     }
 
     func fetchAthlete(id: String) async throws -> Athlete {
-        guard let athlete = MockData.athletes.first(where: { $0.id == id }) else {
+        guard let athlete = athleteCache.first(where: { $0.id == id }) ?? MockData.athletes.first(where: { $0.id == id }) else {
             throw APIError.notFound
         }
         return athlete
@@ -24,36 +381,64 @@ class APIService {
 
     // MARK: - Meets
 
-    func fetchMeets() async throws -> [Meet] {
-        return MockData.meets
+    func fetchMeets() async -> APIResponse<[Meet]> {
+        let response = await fetchWithFallback(
+            [Meet].self,
+            path: "meets",
+            cacheKey: CacheKey.meets.rawValue
+        ) { MockData.meets }
+        let guardedMeets = response.value.map(guardrailMeet)
+        meetCache = guardedMeets
+        return APIResponse(value: guardedMeets, metadata: response.metadata)
     }
 
     func fetchMeet(id: String) async throws -> Meet {
-        guard let meet = MockData.meets.first(where: { $0.id == id }) else {
+        guard let meet = meetCache.first(where: { $0.id == id }) ?? MockData.meets.first(where: { $0.id == id }) else {
             throw APIError.notFound
         }
         return meet
     }
 
-    func fetchUpcomingMeets() async throws -> [Meet] {
-        return MockData.meets.filter { $0.status == .upcoming }
+    func fetchUpcomingMeets() async -> APIResponse<[Meet]> {
+        let response = await fetchMeets()
+        return APIResponse(
+            value: response.value.filter { $0.status == .upcoming },
+            metadata: response.metadata
+        )
     }
 
     // MARK: - Results
 
-    func fetchResults(eventID: String) async throws -> [Result] {
-        return MockData.results.filter { $0.eventID == eventID }
+    func fetchResults(eventID: String) async -> APIResponse<[Result]> {
+        let response = await fetchWithFallback(
+            [Result].self,
+            path: "events/\(eventID)/results",
+            cacheKey: CacheKey.results(eventID: eventID)
+        ) {
+            MockData.results.filter { $0.eventID == eventID }
+        }
+        return APIResponse(value: response.value.map(guardrailResult), metadata: response.metadata)
     }
 
     // MARK: - Storylines
 
-    func fetchCompetitiveStorylines() async throws -> [CompetitiveStoryline] {
-        return MockData.storylines
+    func fetchCompetitiveStorylines() async -> APIResponse<[CompetitiveStoryline]> {
+        let response = await fetchWithFallback(
+            [CompetitiveStoryline].self,
+            path: "storylines",
+            cacheKey: CacheKey.storylines.rawValue
+        ) { MockData.storylines }
+        let guardedStorylines = response.value.map(guardrailStoryline)
+        storylineCache = guardedStorylines
+        return APIResponse(value: guardedStorylines, metadata: response.metadata)
     }
 }
 
 enum APIError: Error {
     case notFound
+    case invalidBaseURL
+    case invalidResponse
+    case httpStatus(Int)
 }
 
 // MARK: - Mock Data

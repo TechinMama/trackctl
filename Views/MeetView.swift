@@ -33,6 +33,22 @@ struct MeetListView: View {
                             .padding(.horizontal)
                     }
 
+                    if let generatedAt = viewModel.generatedAt {
+                        Text("Generated: \(generatedAt.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.caption2)
+                            .foregroundStyle(AthenaTheme.inkMuted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
+
+                    if let warning = viewModel.dataWarning {
+                        Text(warning)
+                            .font(.caption)
+                            .foregroundStyle(AthenaTheme.alert)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
+
                     if viewModel.isLoading {
                         ProgressView()
                             .tint(AthenaTheme.teal)
@@ -48,7 +64,7 @@ struct MeetListView: View {
                         .scrollContentBackground(.hidden)
                         .listStyle(.plain)
 
-                        Text(NotificationService.sourceCitationText)
+                        Text(viewModel.sourceCitationText)
                             .font(.caption2)
                             .foregroundStyle(AthenaTheme.inkMuted)
                             .frame(maxWidth: .infinity, alignment: .leading)

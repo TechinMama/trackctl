@@ -19,6 +19,7 @@ Secondary role:
 ## Input Types
 - Event
 - Athlete (optional)
+- Athlete level (high school / NCAA / professional)
 - Result
 - Season timing
 - Historical benchmarks
@@ -51,3 +52,11 @@ Allowed output patterns:
 - https://www.flotrack.org/rankings
 - https://trackandfieldnews.com/major-results-links/
 - https://hospitality.la28.org/en/event-discipline/athletics
+- https://www.milesplit.com/
+- https://www.athletic.net/
+
+## Breakout Coverage Guidance
+- Breakout insights may include high school and NCAA athletes when grounded in explicit result sources.
+- Always identify the competition tier when it materially affects interpretation.
+- Do not compare high school, NCAA, and professional performances without stating the benchmark being used.
+- If youth or college coverage is incomplete, say so explicitly instead of overstating confidence.

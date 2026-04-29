@@ -9,6 +9,8 @@ class AthleteViewModel {
     var selectedAthlete: Athlete?
     var isLoading = false
     var errorMessage: String?
+    var lastUpdated: Date?
+    var dataWarning: String?
     
     private let apiService = APIService.shared
     private let followedIDsKey = "athena.followedAthleteIDs"
@@ -22,19 +24,18 @@ class AthleteViewModel {
     func loadAthletes() async {
         isLoading = true
         errorMessage = nil
+        dataWarning = nil
         
-        do {
-            athletes = try await apiService.fetchAthletes()
-            let saved = followedIDs
-            for i in athletes.indices {
-                athletes[i].isFollowing = saved.contains(athletes[i].id)
-            }
-            followingAthletes = athletes.filter { $0.isFollowing }
-            isLoading = false
-        } catch {
-            errorMessage = "Failed to load athletes: \(error.localizedDescription)"
-            isLoading = false
+        let response = await apiService.fetchAthletes()
+        athletes = response.value
+        let saved = followedIDs
+        for i in athletes.indices {
+            athletes[i].isFollowing = saved.contains(athletes[i].id)
         }
+        followingAthletes = athletes.filter { $0.isFollowing }
+        lastUpdated = response.metadata.fetchedAt
+        dataWarning = response.metadata.warning
+        isLoading = false
     }
     
     @MainActor
