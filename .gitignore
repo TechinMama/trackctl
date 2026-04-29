@@ -6,3 +6,6 @@ swiftly.pkg
 **/xcuserdata/
 roadmap.md
 athena-roadmap.md
+.venv/
+.venv-*/
+**/.pytest_cache/
