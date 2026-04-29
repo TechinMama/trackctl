@@ -1,0 +1,11 @@
+environment = "dev"
+location    = "eastus2"
+
+container_image = "<acr-login-server>/athena-backend:dev"
+
+# Provide postgres_admin_password through secure means, for example:
+# export TF_VAR_postgres_admin_password="..."
+
+tags = {
+  owner = "athena"
+}
