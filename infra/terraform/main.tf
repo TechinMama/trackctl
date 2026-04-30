@@ -1,5 +1,5 @@
 locals {
-  base_name = "${var.project}-${var.environment}"
+  base_name          = "${var.project}-${var.environment}"
   global_name_suffix = trimspace(var.resource_name_suffix) != "" ? "-${trimspace(var.resource_name_suffix)}" : ""
 
   tags = merge(var.tags, {
