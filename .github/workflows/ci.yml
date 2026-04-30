@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  lint-and-test:
     runs-on: macos-latest
 
     steps:
@@ -18,8 +18,21 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: SwiftLint
+        run: swiftlint lint --strict
+
       - name: SwiftPM tests
         run: swift test
 
       - name: iOS build
-        run: xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS Simulator,name=iPhone 16' build CODE_SIGNING_ALLOWED=NO
+        run: |
+          xcodebuild \
+            -project Athena.xcodeproj \
+            -scheme Athena \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            build \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}

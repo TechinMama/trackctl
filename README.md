@@ -76,6 +76,37 @@ swift test
 xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS Simulator,name=iPhone 16' build CODE_SIGNING_ALLOWED=NO
 ```
 
+## Release and Deployment Plan
+
+Athena uses a two-workflow release model:
+
+- CI quality gate: `.github/workflows/ci.yml`
+	- Runs on PRs and pushes to `dev`/`main`
+	- Executes SwiftLint, Swift tests, and simulator build
+	- Blocks bad changes before they can be released
+
+- TestFlight release: `.github/workflows/release-testflight.yml`
+	- Triggered by `v*` git tags or manual workflow dispatch
+	- Archives + exports signed IPA
+	- Uploads IPA artifact and submits to TestFlight
+	- Uses `github.run_number` as `CURRENT_PROJECT_VERSION` to keep build numbers increasing
+
+Recommended versioning:
+
+1. Keep `MARKETING_VERSION` for semantic app versions (`1.0`, `1.1`, `1.2`).
+2. Let CI set `CURRENT_PROJECT_VERSION` automatically per run.
+3. Cut a release tag (`v1.0.0`, `v1.0.1`) for each production candidate.
+
+Required GitHub secrets for release workflow:
+
+- `SIGNING_CERT_BASE64`
+- `SIGNING_CERT_PASSWORD`
+- `KEYCHAIN_PASSWORD`
+- `PROVISIONING_PROFILE_BASE64`
+- `APPSTORE_API_KEY_ID`
+- `APPSTORE_API_ISSUER_ID`
+- `APPSTORE_API_PRIVATE_KEY`
+
 ## Cost Guardrails
 - Start dev with the low-traffic Terraform profile (`infra/terraform/envs/dev/dev.tfvars.example`) and scale to zero where safe.
 - Keep production on a baseline profile (`infra/terraform/envs/prod/prod.tfvars.example`) with `min_replicas >= 1`.

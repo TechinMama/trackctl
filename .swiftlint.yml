@@ -1,0 +1,27 @@
+included:
+  - AthenaApp.swift
+  - Models
+  - Services
+  - ViewModels
+  - Views
+  - Theme
+  - Tests
+
+excluded:
+  - Athena.xcodeproj
+  - backend
+  - infra
+
+disabled_rules:
+  - trailing_whitespace     # formatter handles this
+  - line_length             # project uses longer analytical lines
+
+opt_in_rules:
+  - force_unwrapping
+  - empty_count
+  - closure_spacing
+  - overridden_super_call
+
+force_cast: error
+force_try: error
+force_unwrapping: warning
