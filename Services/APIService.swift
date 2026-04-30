@@ -231,7 +231,23 @@ actor APIService {
     }
 
     private func requestURL(path: String) -> URL? {
-        baseURL?.appendingPathComponent(path)
+        guard let base = baseURL else { return nil }
+
+        let parts = path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        let rawPath = String(parts[0])
+        let query = parts.count > 1 ? String(parts[1]) : nil
+
+        guard var components = URLComponents(url: base, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+
+        let basePath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let appendedPath = rawPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let joinedPath = [basePath, appendedPath].filter { !$0.isEmpty }.joined(separator: "/")
+        components.path = "/" + joinedPath
+        components.percentEncodedQuery = query
+
+        return components.url
     }
 
     private func cacheDirectoryURL() -> URL? {

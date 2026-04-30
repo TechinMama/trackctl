@@ -267,9 +267,9 @@
 		4FAE8EB92BEFFF840F25D0A9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ATHENA_API_BASE_URL = "http://localhost:8080";
+				ATHENA_API_BASE_URL = "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io";
 				ATHENA_LIVE_API_ENABLED = YES;
-				ATHENA_MANAGED_API_SETTINGS = NO;
+				ATHENA_MANAGED_API_SETTINGS = YES;
 				ATHENA_REQUIRE_LIVE_DATA = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
