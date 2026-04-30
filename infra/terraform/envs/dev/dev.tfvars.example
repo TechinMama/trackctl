@@ -10,7 +10,7 @@ container_cpu          = 0.25
 container_memory       = "0.5Gi"
 
 acr_sku            = "Basic"
-log_retention_days = 7
+log_retention_days = 30
 servicebus_sku     = "Basic"
 
 postgres_sku_name   = "B_Standard_B1ms"
