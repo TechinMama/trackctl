@@ -31,6 +31,25 @@ terraform apply -var-file=envs/prod/prod.tfvars
 - Container App is configured with managed identity and ACR pull assignment.
 - Fill in `container_image` with your pushed backend image before apply.
 
+## CI authentication prerequisites
+
+`terraform plan` against the AzureRM provider requires authenticated Azure access. Before enabling the CI plan step for real deployments, configure GitHub Actions with Azure federation or a service principal.
+
+Recommended path: GitHub OIDC with `azure/login`.
+
+Required GitHub Actions configuration:
+
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `TF_VAR_postgres_admin_password`
+
+Required workflow capability:
+
+- `permissions: id-token: write`
+
+Once those are configured, add an Azure login step before `terraform plan` so the AzureRM provider can resolve the tenant and subscription context.
+
 ## Cost-efficient dev profile
 
 The dev tfvars example is optimized for low traffic:
