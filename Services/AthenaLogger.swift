@@ -70,24 +70,24 @@ final class AthenaLogger: @unchecked Sendable {
             var record: [String: Any] = [
                 "ts": ISO8601DateFormatter().string(from: Date()),
                 "level": level.rawValue,
-                "event": name,
+                "event": name
             ]
-            for (k, v) in props {
-                record[k] = v
+            for (key, value) in props {
+                record[key] = value
             }
             guard let data = try? JSONSerialization.data(withJSONObject: record, options: [.sortedKeys]),
                   var line = String(data: data, encoding: .utf8) else { return }
             line += "\n"
 
             guard let url = self.logFileURL else { return }
-            let fm = FileManager.default
+            let fileManager = FileManager.default
 
-            if !fm.fileExists(atPath: url.path) {
-                fm.createFile(atPath: url.path, contents: nil)
+            if !fileManager.fileExists(atPath: url.path) {
+                fileManager.createFile(atPath: url.path, contents: nil)
             }
 
             // Rolling: truncate first half of file when size limit hit
-            if let attrs = try? fm.attributesOfItem(atPath: url.path),
+            if let attrs = try? fileManager.attributesOfItem(atPath: url.path),
                let size = attrs[.size] as? Int, size > self.maxFileSizeBytes,
                let content = try? String(contentsOf: url, encoding: .utf8) {
                 let lines = content.components(separatedBy: "\n").filter { !$0.isEmpty }

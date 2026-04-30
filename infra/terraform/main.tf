@@ -40,54 +40,54 @@ module "observability" {
 module "container_apps" {
   source = "./modules/container_apps"
 
-  name                         = "ca-${local.base_name}-backend"
-  environment_name             = "cae-${local.base_name}"
-  resource_group_name          = module.resource_group.name
-  location                     = module.resource_group.location
-  log_analytics_workspace_id   = module.observability.log_analytics_workspace_id
-  container_image              = var.container_image
-  container_cpu                = var.container_cpu
-  container_memory             = var.container_memory
-  min_replicas                 = var.container_min_replicas
-  max_replicas                 = var.container_max_replicas
-  target_port                  = 8080
-  acr_id                       = module.acr.id
-  acr_login_server             = module.acr.login_server
-  tags                         = local.tags
+  name                       = "ca-${local.base_name}-backend"
+  environment_name           = "cae-${local.base_name}"
+  resource_group_name        = module.resource_group.name
+  location                   = module.resource_group.location
+  log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+  container_image            = var.container_image
+  container_cpu              = var.container_cpu
+  container_memory           = var.container_memory
+  min_replicas               = var.container_min_replicas
+  max_replicas               = var.container_max_replicas
+  target_port                = 8080
+  acr_id                     = module.acr.id
+  acr_login_server           = module.acr.login_server
+  tags                       = local.tags
 }
 
 module "postgres" {
   source = "./modules/postgres"
 
-  server_name          = "psql-${local.base_name}"
-  database_name        = "athena"
-  resource_group_name  = module.resource_group.name
-  location             = module.resource_group.location
-  admin_username       = var.postgres_admin_username
-  admin_password       = var.postgres_admin_password
-  sku_name             = var.postgres_sku_name
-  storage_mb           = var.postgres_storage_mb
-  tags                 = local.tags
+  server_name         = "psql-${local.base_name}"
+  database_name       = "athena"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  admin_username      = var.postgres_admin_username
+  admin_password      = var.postgres_admin_password
+  sku_name            = var.postgres_sku_name
+  storage_mb          = var.postgres_storage_mb
+  tags                = local.tags
 }
 
 module "servicebus" {
   source = "./modules/servicebus"
 
-  namespace_name       = "sb-${local.base_name}"
-  queue_name           = "notifications"
-  resource_group_name  = module.resource_group.name
-  location             = module.resource_group.location
-  sku                  = var.servicebus_sku
-  tags                 = local.tags
+  namespace_name      = "sb-${local.base_name}"
+  queue_name          = "notifications"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  sku                 = var.servicebus_sku
+  tags                = local.tags
 }
 
 module "key_vault" {
   source = "./modules/key_vault"
 
-  key_vault_name       = "kv-${local.base_name}"
-  resource_group_name  = module.resource_group.name
-  location             = module.resource_group.location
-  tenant_id            = module.container_apps.principal_tenant_id
-  object_id            = module.container_apps.principal_object_id
-  tags                 = local.tags
+  key_vault_name      = "kv-${local.base_name}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  tenant_id           = module.container_apps.principal_tenant_id
+  object_id           = module.container_apps.principal_object_id
+  tags                = local.tags
 }

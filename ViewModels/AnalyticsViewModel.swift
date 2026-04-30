@@ -38,9 +38,9 @@ class AnalyticsViewModel {
         let quality    = breakoutCompetitionQuality(results: results)
         let dominance  = tierDominance(results: results)
         let velocity   = improvementVelocity(results: results)
-        let repeat_    = repeatability(results: results)
+            let repeatScore = repeatability(results: results)
         let recency    = breakoutRecency(results: results, now: now)
-        let total = min(100, quality + dominance + velocity + repeat_ + recency)
+            let total = min(100, quality + dominance + velocity + repeatScore + recency)
         return BreakoutScore(
             score: total,
             band: breakoutBand(for: total),
@@ -48,7 +48,7 @@ class AnalyticsViewModel {
             competitionQuality: quality,
             tierDominance: dominance,
             improvementVelocity: velocity,
-            repeatability: repeat_,
+                repeatability: repeatScore,
             recencyBonus: recency
         )
     }
@@ -56,7 +56,7 @@ class AnalyticsViewModel {
     private func detectTier(for athlete: Athlete) -> BreakoutScore.Tier {
         let lower = athlete.discipline.lowercased()
         if lower.contains("high school") || lower.contains(" hs ") { return .highSchool }
-        if lower.contains("ncaa") || lower.contains("collegiate")  { return .ncaa }
+        if lower.contains("ncaa") || lower.contains("collegiate") { return .ncaa }
         return .professional
     }
 
@@ -86,8 +86,8 @@ class AnalyticsViewModel {
         let newHalf = sorted.count - half
         let newAvg = Double(sorted.suffix(newHalf).map(\.placement).reduce(0, +)) / Double(newHalf)
         if newAvg < oldAvg - 1.0 { return 20 }
-        if newAvg < oldAvg       { return 14 }
-        if newAvg == oldAvg      { return 8 }
+        if newAvg < oldAvg { return 14 }
+        if newAvg == oldAvg { return 8 }
         return 2
     }
 
@@ -164,8 +164,8 @@ class AnalyticsViewModel {
         let newHalf = sorted.count - half
         let newAvg = Double(sorted.suffix(newHalf).map(\.placement).reduce(0, +)) / Double(newHalf)
         if newAvg < oldAvg - 1.0 { return 20 }
-        if newAvg < oldAvg       { return 14 }
-        if newAvg == oldAvg      { return 10 }
+        if newAvg < oldAvg { return 14 }
+        if newAvg == oldAvg { return 10 }
         return 5
     }
 
@@ -185,10 +185,10 @@ class AnalyticsViewModel {
         athleteB: Athlete, momentumB: Int,
         now: Date = Date()
     ) -> RivalryHeatScore {
-        let discipline    = sharedDisciplineScore(a: athleteA, b: athleteB)
-        let momentum      = momentumProximityScore(a: momentumA, b: momentumB)
-        let h2h           = headToHeadScore(a: athleteA, b: athleteB)
-        let overlap       = recentOverlapScore(a: athleteA, b: athleteB, now: now)
+        let discipline    = sharedDisciplineScore(athleteA: athleteA, athleteB: athleteB)
+        let momentum      = momentumProximityScore(momentumA: momentumA, momentumB: momentumB)
+        let h2h           = headToHeadScore(athleteA: athleteA, athleteB: athleteB)
+        let overlap       = recentOverlapScore(athleteA: athleteA, athleteB: athleteB, now: now)
         let championship  = championshipRelevanceScore(now: now)
         let total = min(100, discipline + momentum + h2h + overlap + championship)
         return RivalryHeatScore(
@@ -232,15 +232,15 @@ class AnalyticsViewModel {
         return result
     }
 
-    private func sharedDisciplineScore(a: Athlete, b: Athlete) -> Int {
-        let aLabels = Set(a.discipline.lowercased().split(separator: "/")
+    private func sharedDisciplineScore(athleteA: Athlete, athleteB: Athlete) -> Int {
+        let aLabels = Set(athleteA.discipline.lowercased().split(separator: "/")
             .map { $0.trimmingCharacters(in: .whitespaces) })
-        let bLabels = Set(b.discipline.lowercased().split(separator: "/")
+        let bLabels = Set(athleteB.discipline.lowercased().split(separator: "/")
             .map { $0.trimmingCharacters(in: .whitespaces) })
         if !aLabels.isDisjoint(with: bLabels) { return 30 }
 
-        let aEvents = Set(a.recentResults.map { $0.eventName.lowercased() })
-        let bEvents = Set(b.recentResults.map { $0.eventName.lowercased() })
+        let aEvents = Set(athleteA.recentResults.map { $0.eventName.lowercased() })
+        let bEvents = Set(athleteB.recentResults.map { $0.eventName.lowercased() })
         if !aEvents.isDisjoint(with: bEvents) { return 25 }
 
         let aWords = Set(aLabels.flatMap { $0.split(separator: " ").map(String.init) })
@@ -249,17 +249,17 @@ class AnalyticsViewModel {
         return 0
     }
 
-    private func momentumProximityScore(a: Int, b: Int) -> Int {
-        let delta = abs(a - b)
-        if delta <= 5  { return 25 }
+    private func momentumProximityScore(momentumA: Int, momentumB: Int) -> Int {
+        let delta = abs(momentumA - momentumB)
+        if delta <= 5 { return 25 }
         if delta <= 15 { return 18 }
         if delta <= 25 { return 10 }
         return 3
     }
 
-    private func headToHeadScore(a: Athlete, b: Athlete) -> Int {
-        let aEventIDs = Set(a.recentResults.map(\.eventID))
-        let bEventIDs = Set(b.recentResults.map(\.eventID))
+    private func headToHeadScore(athleteA: Athlete, athleteB: Athlete) -> Int {
+        let aEventIDs = Set(athleteA.recentResults.map(\.eventID))
+        let bEventIDs = Set(athleteB.recentResults.map(\.eventID))
         switch aEventIDs.intersection(bEventIDs).count {
         case 3...: return 20
         case 2:    return 14
@@ -268,18 +268,18 @@ class AnalyticsViewModel {
         }
     }
 
-    private func recentOverlapScore(a: Athlete, b: Athlete, now: Date) -> Int {
+    private func recentOverlapScore(athleteA: Athlete, athleteB: Athlete, now: Date) -> Int {
         let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: now) ?? now
-        let aNames = Set(a.recentResults.filter { $0.date >= cutoff }.map { $0.eventName.lowercased() })
-        let bNames = Set(b.recentResults.filter { $0.date >= cutoff }.map { $0.eventName.lowercased() })
+        let aNames = Set(athleteA.recentResults.filter { $0.date >= cutoff }.map { $0.eventName.lowercased() })
+        let bNames = Set(athleteB.recentResults.filter { $0.date >= cutoff }.map { $0.eventName.lowercased() })
         return min(15, aNames.intersection(bNames).count * 5)
     }
 
     private func championshipRelevanceScore(now: Date) -> Int {
         let month = Calendar.current.component(.month, from: now)
-        if (6...9).contains(month)  { return 10 }
-        if (1...3).contains(month)  { return 7 }
-        if (4...5).contains(month)  { return 5 }
+        if (6...9).contains(month) { return 10 }
+        if (1...3).contains(month) { return 7 }
+        if (4...5).contains(month) { return 5 }
         return 2
     }
 
@@ -297,7 +297,7 @@ class AnalyticsViewModel {
     private func eventPrestige(for eventName: String) -> Int {
         let lower = eventName.lowercased()
         if lower.contains("olympic") || lower.contains("world championship") { return 30 }
-        if lower.contains("diamond league") || lower.contains("world indoor")  { return 25 }
+        if lower.contains("diamond league") || lower.contains("world indoor") { return 25 }
         if lower.contains("continental") || lower.contains("national championship") || lower.contains("nationals") { return 18 }
         if lower.contains("invitational") || lower.contains("classic") || lower.contains("memorial") || lower.contains("games") { return 10 }
         return 5
@@ -315,7 +315,7 @@ class AnalyticsViewModel {
 
     private func recencyBonus(for date: Date, now: Date) -> Int {
         let days = Calendar.current.dateComponents([.day], from: date, to: now).day ?? Int.max
-        if days <= 7  { return 20 }
+        if days <= 7 { return 20 }
         if days <= 30 { return 12 }
         if days <= 90 { return 5 }
         return 0

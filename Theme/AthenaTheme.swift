@@ -91,37 +91,37 @@ struct AthenaMark: View {
                 )
 
             GeometryReader { proxy in
-                let w = proxy.size.width
-                let h = proxy.size.height
+                let width = proxy.size.width
+                let height = proxy.size.height
 
                 ZStack {
                     Circle()
                         .trim(from: 0.10, to: 0.86)
-                        .stroke(AthenaTheme.teal.opacity(0.85), lineWidth: w * 0.05)
-                        .frame(width: w * 0.88, height: h * 0.88)
+                        .stroke(AthenaTheme.teal.opacity(0.85), lineWidth: width * 0.05)
+                        .frame(width: width * 0.88, height: height * 0.88)
 
                     Path { path in
-                        path.move(to: CGPoint(x: w * 0.23, y: h * 0.82))
-                        path.addLine(to: CGPoint(x: w * 0.50, y: h * 0.18))
-                        path.addLine(to: CGPoint(x: w * 0.77, y: h * 0.82))
+                        path.move(to: CGPoint(x: width * 0.23, y: height * 0.82))
+                        path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.18))
+                        path.addLine(to: CGPoint(x: width * 0.77, y: height * 0.82))
                     }
-                    .stroke(Color.white, style: StrokeStyle(lineWidth: w * 0.125, lineCap: .round, lineJoin: .round))
+                    .stroke(Color.white, style: StrokeStyle(lineWidth: width * 0.125, lineCap: .round, lineJoin: .round))
 
                     Path { path in
-                        path.move(to: CGPoint(x: w * 0.36, y: h * 0.55))
-                        path.addLine(to: CGPoint(x: w * 0.64, y: h * 0.55))
+                        path.move(to: CGPoint(x: width * 0.36, y: height * 0.55))
+                        path.addLine(to: CGPoint(x: width * 0.64, y: height * 0.55))
                     }
-                    .stroke(AthenaTheme.tealMuted, style: StrokeStyle(lineWidth: w * 0.085, lineCap: .round))
+                    .stroke(AthenaTheme.tealMuted, style: StrokeStyle(lineWidth: width * 0.085, lineCap: .round))
 
                     Ellipse()
                         .fill(AthenaTheme.bone)
-                        .frame(width: w * 0.18, height: h * 0.10)
-                        .offset(y: -h * 0.05)
+                        .frame(width: width * 0.18, height: height * 0.10)
+                        .offset(y: -height * 0.05)
 
                     Circle()
                         .fill(AthenaTheme.charcoal)
-                        .frame(width: w * 0.05)
-                        .offset(y: -h * 0.05)
+                        .frame(width: width * 0.05)
+                        .offset(y: -height * 0.05)
                 }
             }
             .padding(size * 0.16)
@@ -140,7 +140,7 @@ struct AthenaHeroHeader: View {
 
     let title: String
     let subtitle: String
-    var eyebrow: String? = nil
+    var eyebrow: String?
     var pills: [PillItem] = [
         PillItem(label: "Intelligent", systemImage: "brain"),
         PillItem(label: "Insightful", systemImage: "eye.fill"),

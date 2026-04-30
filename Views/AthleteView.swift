@@ -172,7 +172,7 @@ struct AthleteDetailView: View {
     @Environment(AthleteViewModel.self) var viewModel
     @Environment(AnalyticsViewModel.self) var analyticsViewModel
     @State private var athleteNotificationsEnabled = true
-        @State private var insightText: String? = nil
+        @State private var insightText: String?
         @State private var insightCitations: [String] = []
         @State private var insightSource: String = "deterministic"
         @State private var insightLoading = false
@@ -215,14 +215,14 @@ struct AthleteDetailView: View {
                         Task {
                             await viewModel.followAthlete(id: liveAthlete.id)
                         }
-                    }) {
-                        Label(
-                            liveAthlete.isFollowing ? "Following" : "Follow",
-                            systemImage: liveAthlete.isFollowing ? "checkmark.circle.fill" : "plus.circle"
-                        )
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                    }
+                        }, label: {
+                            Label(
+                                liveAthlete.isFollowing ? "Following" : "Follow",
+                                systemImage: liveAthlete.isFollowing ? "checkmark.circle.fill" : "plus.circle"
+                            )
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                        })
                     .buttonStyle(.borderedProminent)
                     .tint(liveAthlete.isFollowing ? AthenaTheme.tealMuted : AthenaTheme.teal)
 

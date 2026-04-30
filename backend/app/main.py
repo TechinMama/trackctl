@@ -68,7 +68,8 @@ def _hf_explain(payload: ExplainRequest) -> str | None:
         user_msg = (
             f"Feature: {feature_label}\n"
             f"Athlete: {name} | Discipline: {discipline}"
-            + (f" | Personal best: {personal_best}" if personal_best else "") + "\n"
+            + (f" | Personal best: {personal_best}" if personal_best else "")
+            + "\n"
             f"Analytics: {analytics_str}\n"
             f"Sources: {sources_str}\n"
             "Write the insight now."
@@ -90,6 +91,7 @@ def _hf_explain(payload: ExplainRequest) -> str | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("hf_explain_failed", error=str(exc), model=_HF_MODEL)
         return None
+
 
 # In-memory notification store — replace with DB in production.
 _queue_store: list[NotificationQueueRequest] = []
@@ -125,37 +127,130 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-_RUNNING_SIGNALS = {"100m", "200m", "400m", "800m", "1500m", "5000m", "10000m", "marathon",
-                    "hurdle", "steeplechase", "relay", "mile", "sprint", "distance", "run", "xc"}
-_FIELD_SIGNALS  = {"vault", "jump", "shot put", "discus", "javelin", "hammer", "heptathlon",
-                   "decathlon", "throws"}
+_RUNNING_SIGNALS = {
+    "100m",
+    "200m",
+    "400m",
+    "800m",
+    "1500m",
+    "5000m",
+    "10000m",
+    "marathon",
+    "hurdle",
+    "steeplechase",
+    "relay",
+    "mile",
+    "sprint",
+    "distance",
+    "run",
+    "xc",
+}
+_FIELD_SIGNALS = {
+    "vault",
+    "jump",
+    "shot put",
+    "discus",
+    "javelin",
+    "hammer",
+    "heptathlon",
+    "decathlon",
+    "throws",
+}
 
 _ATHLETE_POOL: list[AthleteFull] = [
-    AthleteFull(id="a1", name="Sydney McLaughlin-Levrone", country="USA", discipline="400m Hurdles",
-                personalBest="50.65", recentResults=[
-                    RecentResult(id="r1", athleteID="a1", athleteName="Sydney McLaughlin-Levrone",
-                                 eventID="e1", eventName="400m Hurdles", placement=1, time="50.65",
-                                 date="2026-03-21T18:30:00Z")]),
-    AthleteFull(id="a2", name="Noah Lyles", country="USA", discipline="100m / 200m",
-                personalBest="9.79", recentResults=[
-                    RecentResult(id="r2", athleteID="a2", athleteName="Noah Lyles",
-                                 eventID="e2", eventName="100m", placement=1, time="9.81",
-                                 date="2026-03-22T19:15:00Z")]),
-    AthleteFull(id="a3", name="Mondo Duplantis", country="SWE", discipline="Pole Vault",
-                personalBest="6.25m", recentResults=[
-                    RecentResult(id="r3", athleteID="a3", athleteName="Mondo Duplantis",
-                                 eventID="e3", eventName="Pole Vault", placement=1,
-                                 date="2026-02-18T17:00:00Z")]),
-    AthleteFull(id="a4", name="Faith Kipyegon", country="KEN", discipline="1500m",
-                personalBest="3:49.11", recentResults=[
-                    RecentResult(id="r4", athleteID="a4", athleteName="Faith Kipyegon",
-                                 eventID="e4", eventName="1500m", placement=1,
-                                 date="2026-04-05T16:45:00Z")]),
-    AthleteFull(id="a5", name="Marcell Jacobs", country="ITA", discipline="100m",
-                personalBest="9.80", recentResults=[
-                    RecentResult(id="r5", athleteID="a5", athleteName="Marcell Jacobs",
-                                 eventID="e5", eventName="100m", placement=2, time="9.84",
-                                 date="2026-03-30T18:00:00Z")]),
+    AthleteFull(
+        id="a1",
+        name="Sydney McLaughlin-Levrone",
+        country="USA",
+        discipline="400m Hurdles",
+        personalBest="50.65",
+        recentResults=[
+            RecentResult(
+                id="r1",
+                athleteID="a1",
+                athleteName="Sydney McLaughlin-Levrone",
+                eventID="e1",
+                eventName="400m Hurdles",
+                placement=1,
+                time="50.65",
+                date="2026-03-21T18:30:00Z",
+            )
+        ],
+    ),
+    AthleteFull(
+        id="a2",
+        name="Noah Lyles",
+        country="USA",
+        discipline="100m / 200m",
+        personalBest="9.79",
+        recentResults=[
+            RecentResult(
+                id="r2",
+                athleteID="a2",
+                athleteName="Noah Lyles",
+                eventID="e2",
+                eventName="100m",
+                placement=1,
+                time="9.81",
+                date="2026-03-22T19:15:00Z",
+            )
+        ],
+    ),
+    AthleteFull(
+        id="a3",
+        name="Mondo Duplantis",
+        country="SWE",
+        discipline="Pole Vault",
+        personalBest="6.25m",
+        recentResults=[
+            RecentResult(
+                id="r3",
+                athleteID="a3",
+                athleteName="Mondo Duplantis",
+                eventID="e3",
+                eventName="Pole Vault",
+                placement=1,
+                date="2026-02-18T17:00:00Z",
+            )
+        ],
+    ),
+    AthleteFull(
+        id="a4",
+        name="Faith Kipyegon",
+        country="KEN",
+        discipline="1500m",
+        personalBest="3:49.11",
+        recentResults=[
+            RecentResult(
+                id="r4",
+                athleteID="a4",
+                athleteName="Faith Kipyegon",
+                eventID="e4",
+                eventName="1500m",
+                placement=1,
+                date="2026-04-05T16:45:00Z",
+            )
+        ],
+    ),
+    AthleteFull(
+        id="a5",
+        name="Marcell Jacobs",
+        country="ITA",
+        discipline="100m",
+        personalBest="9.80",
+        recentResults=[
+            RecentResult(
+                id="r5",
+                athleteID="a5",
+                athleteName="Marcell Jacobs",
+                eventID="e5",
+                eventName="100m",
+                placement=2,
+                time="9.84",
+                date="2026-03-30T18:00:00Z",
+            )
+        ],
+    ),
 ]
 
 
@@ -164,6 +259,7 @@ def _is_runner(athlete: AthleteFull) -> bool:
     if any(sig in text for sig in _FIELD_SIGNALS):
         return False
     import re
+
     if re.search(r"\b\d{2,5}m(h)?\b", text):
         return True
     return any(sig in text for sig in _RUNNING_SIGNALS)
@@ -172,11 +268,16 @@ def _is_runner(athlete: AthleteFull) -> bool:
 @app.get("/athletes")
 def athletes(
     q: str | None = Query(default=None, description="Search by name, country, or discipline"),
-    active_only: bool = Query(default=False, description="Return only athletes with results in last 365 days"),
-    runners_only: bool = Query(default=False, description="Return only running-discipline athletes"),
+    active_only: bool = Query(
+        default=False, description="Return only athletes with results in last 365 days"
+    ),
+    runners_only: bool = Query(
+        default=False, description="Return only running-discipline athletes"
+    ),
     limit: int = Query(default=200, ge=1, le=500),
 ) -> Envelope[list[AthleteFull]]:
     from datetime import timedelta
+
     cutoff = datetime.now(UTC) - timedelta(days=365)
 
     pool = _ATHLETE_POOL
@@ -185,10 +286,12 @@ def athletes(
         pool = [a for a in pool if _is_runner(a)]
 
     if active_only:
+
         def _has_recent(a: AthleteFull) -> bool:
             if not a.recentResults:
                 return False
             from datetime import datetime
+
             dates = []
             for r in a.recentResults:
                 try:
@@ -196,12 +299,16 @@ def athletes(
                 except ValueError:
                     pass
             return bool(dates) and max(dates) >= cutoff
+
         pool = [a for a in pool if _has_recent(a)]
 
     if q:
         ql = q.lower()
-        pool = [a for a in pool
-                if ql in a.name.lower() or ql in a.country.lower() or ql in a.discipline.lower()]
+        pool = [
+            a
+            for a in pool
+            if ql in a.name.lower() or ql in a.country.lower() or ql in a.discipline.lower()
+        ]
 
     pool = pool[:limit]
     return Envelope(data=pool, meta=make_meta(["World Athletics", "FloTrack"], "high"))
@@ -264,7 +371,10 @@ def breakouts() -> Envelope[list[BreakoutItem]]:
 def rivalries() -> Envelope[list[RivalryItem]]:
     data = [
         RivalryItem(
-            athletes=[RivalryAthlete(id="a1", name="Athlete A"), RivalryAthlete(id="a2", name="Athlete B")],
+            athletes=[
+                RivalryAthlete(id="a1", name="Athlete A"),
+                RivalryAthlete(id="a2", name="Athlete B"),
+            ],
             rivalry=RivalryScore(
                 score=81,
                 band="High Heat",
@@ -330,22 +440,32 @@ def explain(payload: ExplainRequest) -> Envelope[ExplainResponse]:
     parts.append(f"{name} competes in {discipline}.")
 
     if personal_best:
-        parts.append(f"Their personal best of {personal_best} places them in the competitive reference window for elite-level comparison.")
+        parts.append(
+            f"Their personal best of {personal_best} places them in the competitive reference window for elite-level comparison."
+        )
 
     if momentum is not None:
         if momentum >= 70:
-            parts.append("Current momentum signals a strong recent performance trajectory based on verified competition results.")
+            parts.append(
+                "Current momentum signals a strong recent performance trajectory based on verified competition results."
+            )
         elif momentum >= 40:
-            parts.append("Recent performance data shows moderate competitive consistency across their results window.")
+            parts.append(
+                "Recent performance data shows moderate competitive consistency across their results window."
+            )
         else:
-            parts.append("Performance data reflects an early-season or rebuilding trend within their competition tier.")
+            parts.append(
+                "Performance data reflects an early-season or rebuilding trend within their competition tier."
+            )
 
     parts.append(
         f"This {feature_label} signal is grounded in deterministic analytics with confidence adjusted to available source coverage."
     )
 
     if not payload.sources:
-        parts.append("If source data is incomplete, treat this insight as best-effort context only.")
+        parts.append(
+            "If source data is incomplete, treat this insight as best-effort context only."
+        )
 
     text = " ".join(parts)
     text = _enforce_explain_contract(text)
@@ -385,7 +505,9 @@ def queue_notification(payload: NotificationQueueRequest) -> Envelope[Notificati
 
 
 @app.get("/notifications/queue")
-def drain_notification_queue(limit: int = Query(default=50, ge=1, le=200)) -> Envelope[list[NotificationQueueRequest]]:
+def drain_notification_queue(
+    limit: int = Query(default=50, ge=1, le=200),
+) -> Envelope[list[NotificationQueueRequest]]:
     """Return and clear pending notifications (for a push worker to consume)."""
     batch = _queue_store[:limit]
     del _queue_store[:limit]

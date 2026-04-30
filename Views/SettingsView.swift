@@ -145,11 +145,15 @@ struct SettingsView: View {
                     }
                     
                     Section("Links") {
-                        Link("About Athena", destination: URL(string: "https://athena.example.com")!)
+                        if let aboutURL = URL(string: "https://athena.example.com") {
+                            Link("About Athena", destination: aboutURL)
+                        }
                         NavigationLink("Privacy Policy") {
                             PrivacyView()
                         }
-                        Link("Contact Support", destination: URL(string: "mailto:support@athena.example.com")!)
+                        if let supportURL = URL(string: "mailto:support@athena.example.com") {
+                            Link("Contact Support", destination: supportURL)
+                        }
                     }
                 }
                 .scrollContentBackground(.hidden)

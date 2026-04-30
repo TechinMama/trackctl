@@ -182,14 +182,14 @@ actor APIService {
     }
 
     private func cacheDirectoryURL() -> URL? {
-        let fm = FileManager.default
-        guard let cachesRoot = fm.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+        let fileManager = FileManager.default
+        guard let cachesRoot = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
             return nil
         }
         let folder = cachesRoot.appendingPathComponent(cacheFolderName, isDirectory: true)
-        if !fm.fileExists(atPath: folder.path) {
+        if !fileManager.fileExists(atPath: folder.path) {
             do {
-                try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+                try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
             } catch {
                 print("Failed to create API cache directory: \(error.localizedDescription)")
                 return nil
@@ -533,8 +533,8 @@ private enum MockData {
 
     // MARK: Shared date helpers
     static func date(_ iso: String) -> Date {
-        let f = ISO8601DateFormatter()
-        return f.date(from: iso) ?? Date()
+        let formatter = ISO8601DateFormatter()
+        return formatter.date(from: iso) ?? Date()
     }
 
     // MARK: Results
