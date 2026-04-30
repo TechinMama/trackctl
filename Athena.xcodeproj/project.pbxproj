@@ -8,21 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		076749EC6A4CEF44A57CF541 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08AC0958AFEB2D1726B1E98E /* Event.swift */; };
-		191F632656E8268931623591 /* MeetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BDAC220147B221017483CE /* MeetViewModel.swift */; };
-		23E08C1DE647BA0741F411E8 /* MeetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA999C0F526182FE9E98B75F /* MeetView.swift */; };
-		3466742DAFACAC860C5442A9 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7565649CDCC6665C4B2420DD /* HomeViewModel.swift */; };
-		36A5BDF7602ADAF6D5C05304 /* AthleteViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAD4CBFEE602D1A85637675 /* AthleteViewModel.swift */; };
+		09D8B3B18FF09E84E5C9676E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F51DB83B6A314875C7B7009 /* ContentView.swift */; };
+		151C70CA7E162661547CF784 /* MeetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A7107471D50B041291B510B /* MeetViewModel.swift */; };
+		2F4B7454C686C3C7A684325F /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB62973512653CDF2C6B3AA /* AnalyticsViewModel.swift */; };
+		3A30899E7F8F41B5E024069F /* AthleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C35644BC0C0744A6C946AA /* AthleteView.swift */; };
+		412DE3EF61291E06F65096EE /* AnalyticsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75647A209DCBC6488A817766 /* AnalyticsModels.swift */; };
 		4135C3BC86A8A659BE4E8986 /* Meet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075CEE5765C1BBB6771C6B3F /* Meet.swift */; };
-		45B87F15B4904B506A7C0A16 /* AthenaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0FD06AD037F1060ABDF998 /* AthenaApp.swift */; };
-		532EAD04B5A2C83BA8E8125E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D9521D3C0EA35CE5630148B /* ContentView.swift */; };
+		4F0BA335DD5C3D91487C54C5 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB146A3E483DAB029560941C /* HomeView.swift */; };
+		54FCCA698B15D86CFE822092 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12702B443420758A66020C0D /* HomeViewModel.swift */; };
+		59A75A6850D30A02D9971FD3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3D6151A4AF86F9BBC7CF12 /* SettingsView.swift */; };
+		6E2F2F13FA675EA5DF6D548C /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 8889085CC5AE4A1E39D456B9 /* Sentry */; };
 		73F1ABCB762914136318EDCF /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9218D52898E9B554F2F0B9F /* Result.swift */; };
 		77DFCD50FC47AB3C1B660E11 /* AthenaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0EBB283BEBBFEAF666D8D5 /* AthenaTheme.swift */; };
 		94FE7D0421C5571A7D0776BC /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09175B604E48F69880B276EE /* APIService.swift */; };
-		A966CBF9FA5AB9F955941FA8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D02F2D1C60FF1827AA6C6F3D /* SettingsView.swift */; };
-		AD7DED9DCBBAD5D0F4636CDD /* AthleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 829C007195882E8A6A5C477E /* AthleteView.swift */; };
+		955898E1631F56AE0FECB4C0 /* InsightCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C972DF1ECBEDC8B35B17B3E5 /* InsightCardView.swift */; };
+		9C5F04B4AFD1DF0E886247ED /* AnalyticsCardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A668EEBF3D955EB5CE200E2 /* AnalyticsCardViews.swift */; };
+		A912134EFD3B25201B0064FE /* AthleteViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14BD10256385B4854F9A1E1A /* AthleteViewModel.swift */; };
+		AE81F95AEFEC304B46A334AF /* MeetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEB8CEAF672DA2F709E6A7B3 /* MeetView.swift */; };
+		B153B5EEF9694855CB2657FB /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0E92C46C1C3E27282CF07D /* PrivacyView.swift */; };
+		B6C87C36F6E9A12A0FB10EDB /* AthenaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2D632F43926FDB5EC3BD4C /* AthenaApp.swift */; };
 		CEEE68456D1C6F305581B3D7 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F30370F96B2622E4810CBEE /* NotificationService.swift */; };
 		DCC5467FD961F7ABE870A7F8 /* CompetitiveStoryline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1719EA975DEACDB672AB7AB6 /* CompetitiveStoryline.swift */; };
-		DD4E1F5ABDE8336223E235E9 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5711ADC8220E5C4F3D241725 /* HomeView.swift */; };
+		EB197535C5A25A1B60081C54 /* AthenaLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84B160B4CCF926C34BA0B37 /* AthenaLogger.swift */; };
 		F4C610A3FE6311E6C72A28E8 /* Athlete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4011FBD7DF7EB8B80D5EB736 /* Athlete.swift */; };
 /* End PBXBuildFile section */
 
@@ -30,38 +37,41 @@
 		075CEE5765C1BBB6771C6B3F /* Meet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meet.swift; sourceTree = "<group>"; };
 		08AC0958AFEB2D1726B1E98E /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
 		09175B604E48F69880B276EE /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
-		09A13093DE28C6DCB72101DA /* package.xcworkspace */ = {isa = PBXFileReference; lastKnownFileType = wrapper.workspace; path = package.xcworkspace; sourceTree = "<group>"; };
-		11BDAC220147B221017483CE /* MeetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetViewModel.swift; sourceTree = "<group>"; };
+		12702B443420758A66020C0D /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		14BD10256385B4854F9A1E1A /* AthleteViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteViewModel.swift; sourceTree = "<group>"; };
 		1719EA975DEACDB672AB7AB6 /* CompetitiveStoryline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitiveStoryline.swift; sourceTree = "<group>"; };
 		1B0EBB283BEBBFEAF666D8D5 /* AthenaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthenaTheme.swift; sourceTree = "<group>"; };
-		1EAD4CBFEE602D1A85637675 /* AthleteViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteViewModel.swift; sourceTree = "<group>"; };
 		1F30370F96B2622E4810CBEE /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		34C35644BC0C0744A6C946AA /* AthleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteView.swift; sourceTree = "<group>"; };
 		4011FBD7DF7EB8B80D5EB736 /* Athlete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Athlete.swift; sourceTree = "<group>"; };
-		5711ADC8220E5C4F3D241725 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		7278441B44BAC93DC745CC70 /* Athena.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Athena.xcodeproj; sourceTree = "<group>"; };
-		7565649CDCC6665C4B2420DD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
-		7B45E110CAD9DF94FFDFF089 /* .swift-version */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".swift-version"; sourceTree = "<group>"; };
-		7D9521D3C0EA35CE5630148B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		829C007195882E8A6A5C477E /* AthleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteView.swift; sourceTree = "<group>"; };
-		91D7ED0BC255E51EBEAF560B /* Athena.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Athena.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AD0FD06AD037F1060ABDF998 /* AthenaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthenaApp.swift; sourceTree = "<group>"; };
-		D02F2D1C60FF1827AA6C6F3D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		4CB62973512653CDF2C6B3AA /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
+		4F51DB83B6A314875C7B7009 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5A7107471D50B041291B510B /* MeetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetViewModel.swift; sourceTree = "<group>"; };
+		75647A209DCBC6488A817766 /* AnalyticsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsModels.swift; sourceTree = "<group>"; };
+		7A668EEBF3D955EB5CE200E2 /* AnalyticsCardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsCardViews.swift; sourceTree = "<group>"; };
+		8C2D632F43926FDB5EC3BD4C /* AthenaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthenaApp.swift; sourceTree = "<group>"; };
+		91D7ED0BC255E51EBEAF560B /* Athena.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Athena.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A3D6151A4AF86F9BBC7CF12 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A84B160B4CCF926C34BA0B37 /* AthenaLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthenaLogger.swift; sourceTree = "<group>"; };
+		AEB8CEAF672DA2F709E6A7B3 /* MeetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetView.swift; sourceTree = "<group>"; };
+		C972DF1ECBEDC8B35B17B3E5 /* InsightCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCardView.swift; sourceTree = "<group>"; };
 		D9218D52898E9B554F2F0B9F /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
-		DA999C0F526182FE9E98B75F /* MeetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetView.swift; sourceTree = "<group>"; };
-		F031D78A4B6CBACF97492B53 /* xcschememanagement.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = xcschememanagement.plist; sourceTree = "<group>"; };
+		ED0E92C46C1C3E27282CF07D /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
+		FB146A3E483DAB029560941C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXGroup section */
-		253ED9B0E580A463D96394AC /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				1EAD4CBFEE602D1A85637675 /* AthleteViewModel.swift */,
-				7565649CDCC6665C4B2420DD /* HomeViewModel.swift */,
-				11BDAC220147B221017483CE /* MeetViewModel.swift */,
+/* Begin PBXFrameworksBuildPhase section */
+		5724F320435A87E6917A116E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E2F2F13FA675EA5DF6D548C /* Sentry in Frameworks */,
 			);
-			path = ViewModels;
-			sourceTree = "<group>";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
 		40AA060B43477F3F456D2768 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -70,55 +80,26 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4425C3C49D7438746B84C756 /* xcode */ = {
+		4514F2B40DA8E6A143AC0EA4 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				09A13093DE28C6DCB72101DA /* package.xcworkspace */,
-				F61FCAC9F05FDFADE2151E19 /* xcuserdata */,
-			);
-			path = xcode;
-			sourceTree = "<group>";
-		};
-		700047AC4FECFBB2F7FF6F64 /* .swiftpm */ = {
-			isa = PBXGroup;
-			children = (
-				4425C3C49D7438746B84C756 /* xcode */,
-			);
-			path = .swiftpm;
-			sourceTree = "<group>";
-		};
-		7980A5319EEC56DCE339DC94 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				829C007195882E8A6A5C477E /* AthleteView.swift */,
-				7D9521D3C0EA35CE5630148B /* ContentView.swift */,
-				5711ADC8220E5C4F3D241725 /* HomeView.swift */,
-				DA999C0F526182FE9E98B75F /* MeetView.swift */,
-				D02F2D1C60FF1827AA6C6F3D /* SettingsView.swift */,
+				7A668EEBF3D955EB5CE200E2 /* AnalyticsCardViews.swift */,
+				34C35644BC0C0744A6C946AA /* AthleteView.swift */,
+				4F51DB83B6A314875C7B7009 /* ContentView.swift */,
+				FB146A3E483DAB029560941C /* HomeView.swift */,
+				C972DF1ECBEDC8B35B17B3E5 /* InsightCardView.swift */,
+				AEB8CEAF672DA2F709E6A7B3 /* MeetView.swift */,
+				ED0E92C46C1C3E27282CF07D /* PrivacyView.swift */,
+				9A3D6151A4AF86F9BBC7CF12 /* SettingsView.swift */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		799AAE678A5FA50D73F52168 /* xcschemes */ = {
-			isa = PBXGroup;
-			children = (
-				F031D78A4B6CBACF97492B53 /* xcschememanagement.plist */,
-			);
-			path = xcschemes;
-			sourceTree = "<group>";
-		};
-		8398C1E08700C55114E0712B /* alexandramccoy.xcuserdatad */ = {
-			isa = PBXGroup;
-			children = (
-				799AAE678A5FA50D73F52168 /* xcschemes */,
-			);
-			path = alexandramccoy.xcuserdatad;
 			sourceTree = "<group>";
 		};
 		9BA1B49073190C6F50041F1F /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				09175B604E48F69880B276EE /* APIService.swift */,
+				A84B160B4CCF926C34BA0B37 /* AthenaLogger.swift */,
 				1F30370F96B2622E4810CBEE /* NotificationService.swift */,
 			);
 			path = Services;
@@ -135,31 +116,31 @@
 		B4ED8F113881074B43A76E4C = {
 			isa = PBXGroup;
 			children = (
-				700047AC4FECFBB2F7FF6F64 /* .swiftpm */,
+				8C2D632F43926FDB5EC3BD4C /* AthenaApp.swift */,
 				E7BECCCDCA62A6579A0E6B14 /* Models */,
 				9BA1B49073190C6F50041F1F /* Services */,
 				A97BA20A565225D3C2F4B170 /* Theme */,
-				BD0820DF95791CF36296BE65 /* trackctl */,
-				253ED9B0E580A463D96394AC /* ViewModels */,
-				7980A5319EEC56DCE339DC94 /* Views */,
+				BA60544CAC742AAFA0D964EB /* ViewModels */,
+				4514F2B40DA8E6A143AC0EA4 /* Views */,
 				40AA060B43477F3F456D2768 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		BD0820DF95791CF36296BE65 /* trackctl */ = {
+		BA60544CAC742AAFA0D964EB /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				7B45E110CAD9DF94FFDFF089 /* .swift-version */,
-				7278441B44BAC93DC745CC70 /* Athena.xcodeproj */,
-				AD0FD06AD037F1060ABDF998 /* AthenaApp.swift */,
+				4CB62973512653CDF2C6B3AA /* AnalyticsViewModel.swift */,
+				14BD10256385B4854F9A1E1A /* AthleteViewModel.swift */,
+				12702B443420758A66020C0D /* HomeViewModel.swift */,
+				5A7107471D50B041291B510B /* MeetViewModel.swift */,
 			);
-			name = trackctl;
-			path = .;
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		E7BECCCDCA62A6579A0E6B14 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				75647A209DCBC6488A817766 /* AnalyticsModels.swift */,
 				4011FBD7DF7EB8B80D5EB736 /* Athlete.swift */,
 				1719EA975DEACDB672AB7AB6 /* CompetitiveStoryline.swift */,
 				08AC0958AFEB2D1726B1E98E /* Event.swift */,
@@ -167,19 +148,6 @@
 				D9218D52898E9B554F2F0B9F /* Result.swift */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		F0315C242FA26892000B1ADE /* Products */ = {
-			isa = PBXGroup;
-			name = Products;
-			sourceTree = "<group>";
-		};
-		F61FCAC9F05FDFADE2151E19 /* xcuserdata */ = {
-			isa = PBXGroup;
-			children = (
-				8398C1E08700C55114E0712B /* alexandramccoy.xcuserdatad */,
-			);
-			path = xcuserdata;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -190,7 +158,7 @@
 			buildConfigurationList = 770A8C04BC76E739933549DF /* Build configuration list for PBXNativeTarget "Athena" */;
 			buildPhases = (
 				AC56B3215DEFE9532D6930EC /* Sources */,
-				F2EE7A61401CD0BC774729BF /* Resources */,
+				5724F320435A87E6917A116E /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -198,6 +166,7 @@
 			);
 			name = Athena;
 			packageProductDependencies = (
+				8889085CC5AE4A1E39D456B9 /* Sentry */,
 			);
 			productName = Athena;
 			productReference = 91D7ED0BC255E51EBEAF560B /* Athena.app */;
@@ -210,7 +179,9 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = 3CCEC35698F62A6204634E73 /* Build configuration list for PBXProject "Athena" */;
 			developmentRegion = en;
@@ -221,15 +192,12 @@
 			);
 			mainGroup = B4ED8F113881074B43A76E4C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8222F4C09EB722B1430CF9E5 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 40AA060B43477F3F456D2768 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = F0315C242FA26892000B1ADE /* Products */;
-					ProjectRef = 7278441B44BAC93DC745CC70 /* Athena.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				60C3EF706B4351866393AC3A /* Athena */,
@@ -237,38 +205,34 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXResourcesBuildPhase section */
-		F2EE7A61401CD0BC774729BF /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		AC56B3215DEFE9532D6930EC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				94FE7D0421C5571A7D0776BC /* APIService.swift in Sources */,
-				45B87F15B4904B506A7C0A16 /* AthenaApp.swift in Sources */,
+				9C5F04B4AFD1DF0E886247ED /* AnalyticsCardViews.swift in Sources */,
+				412DE3EF61291E06F65096EE /* AnalyticsModels.swift in Sources */,
+				2F4B7454C686C3C7A684325F /* AnalyticsViewModel.swift in Sources */,
+				B6C87C36F6E9A12A0FB10EDB /* AthenaApp.swift in Sources */,
+				EB197535C5A25A1B60081C54 /* AthenaLogger.swift in Sources */,
 				77DFCD50FC47AB3C1B660E11 /* AthenaTheme.swift in Sources */,
 				F4C610A3FE6311E6C72A28E8 /* Athlete.swift in Sources */,
-				AD7DED9DCBBAD5D0F4636CDD /* AthleteView.swift in Sources */,
-				36A5BDF7602ADAF6D5C05304 /* AthleteViewModel.swift in Sources */,
+				3A30899E7F8F41B5E024069F /* AthleteView.swift in Sources */,
+				A912134EFD3B25201B0064FE /* AthleteViewModel.swift in Sources */,
 				DCC5467FD961F7ABE870A7F8 /* CompetitiveStoryline.swift in Sources */,
-				532EAD04B5A2C83BA8E8125E /* ContentView.swift in Sources */,
+				09D8B3B18FF09E84E5C9676E /* ContentView.swift in Sources */,
 				076749EC6A4CEF44A57CF541 /* Event.swift in Sources */,
-				DD4E1F5ABDE8336223E235E9 /* HomeView.swift in Sources */,
-				3466742DAFACAC860C5442A9 /* HomeViewModel.swift in Sources */,
+				4F0BA335DD5C3D91487C54C5 /* HomeView.swift in Sources */,
+				54FCCA698B15D86CFE822092 /* HomeViewModel.swift in Sources */,
+				955898E1631F56AE0FECB4C0 /* InsightCardView.swift in Sources */,
 				4135C3BC86A8A659BE4E8986 /* Meet.swift in Sources */,
-				23E08C1DE647BA0741F411E8 /* MeetView.swift in Sources */,
-				191F632656E8268931623591 /* MeetViewModel.swift in Sources */,
+				AE81F95AEFEC304B46A334AF /* MeetView.swift in Sources */,
+				151C70CA7E162661547CF784 /* MeetViewModel.swift in Sources */,
 				CEEE68456D1C6F305581B3D7 /* NotificationService.swift in Sources */,
+				B153B5EEF9694855CB2657FB /* PrivacyView.swift in Sources */,
 				73F1ABCB762914136318EDCF /* Result.swift in Sources */,
-				A966CBF9FA5AB9F955941FA8 /* SettingsView.swift in Sources */,
+				59A75A6850D30A02D9971FD3 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,6 +244,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_SentryDSN = "$(SENTRY_DSN)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
@@ -332,7 +297,6 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -356,7 +320,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mccoyale.athena;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SENTRY_DSN = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -368,6 +332,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_SentryDSN = "$(SENTRY_DSN)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
@@ -420,7 +385,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -437,7 +401,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mccoyale.athena;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SENTRY_DSN = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -466,6 +430,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8222F4C09EB722B1430CF9E5 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8889085CC5AE4A1E39D456B9 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8222F4C09EB722B1430CF9E5 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4A0D29D9C242B20A32775B53 /* Project object */;
 }

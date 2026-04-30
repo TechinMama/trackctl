@@ -10,11 +10,15 @@ let package = Package(
     products: [
         .library(name: "Athena", targets: ["Athena"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/getsentry/sentry-cocoa.git", from: "8.0.0")
+    ],
     targets: [
         .target(
             name: "Athena",
-            dependencies: [],
+            dependencies: [
+                .product(name: "Sentry", package: "sentry-cocoa")
+            ],
             path: ".",
             exclude: [
                 ".git",
@@ -24,7 +28,7 @@ let package = Package(
                 "LICENSE",
                 "# Athena – AI Prompt Contract.md",
                 "# Athena – Demo Storyboard (VibeCon).md",
-                "# Athena – MVP Architecture & Feature Sp.md",
+                "SPEC.md",
                 "Social-Lessons-Learned-Toolkit.md",
                 "VibeCon-Execution-Playbook.md",
                 "project.yml",
