@@ -17,6 +17,10 @@ on:
       - infra/terraform/**
       - .github/workflows/terraform-apply.yml
 
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   apply:
     name: Terraform Apply (${{ inputs.environment || 'dev' }})
