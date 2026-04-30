@@ -39,5 +39,7 @@ jobs:
 
       - name: Terraform plan (dev example)
         env:
-          TF_VAR_postgres_admin_password: ${{ secrets.TF_VAR_POSTGRES_ADMIN_PASSWORD }}
+          # Use real secret in production; fall back to a placeholder so plan
+          # can validate the configuration in CI without real credentials.
+          TF_VAR_postgres_admin_password: ${{ secrets.TF_VAR_POSTGRES_ADMIN_PASSWORD || 'ci-placeholder' }}
         run: terraform plan -input=false -var-file=envs/dev/dev.tfvars.example

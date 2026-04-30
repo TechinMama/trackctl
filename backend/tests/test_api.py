@@ -1,14 +1,12 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from fastapi.testclient import TestClient
-
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 import backend.app.main as app_main
 from backend.app.main import app
-
 
 client = TestClient(app)
 

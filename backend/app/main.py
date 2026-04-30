@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, Query
 
@@ -51,7 +51,7 @@ _SYSTEM_PROMPT = (
 )
 
 
-def _hf_explain(payload: "ExplainRequest") -> str | None:
+def _hf_explain(payload: ExplainRequest) -> str | None:
     """Call Hugging Face Inference API. Returns insight text or None on failure."""
     if not _HF_TOKEN:
         return None
@@ -177,7 +177,7 @@ def athletes(
     limit: int = Query(default=200, ge=1, le=500),
 ) -> Envelope[list[AthleteFull]]:
     from datetime import timedelta
-    cutoff = datetime.now(timezone.utc) - timedelta(days=365)
+    cutoff = datetime.now(UTC) - timedelta(days=365)
 
     pool = _ATHLETE_POOL
 
@@ -239,7 +239,7 @@ def breakouts() -> Envelope[list[BreakoutItem]]:
                 discipline="400m",
                 profileImageUrl=None,
             ),
-            result=ResultRef(mark="44.20", date=datetime.now(timezone.utc).isoformat(), meet="Penn Relays"),
+            result=ResultRef(mark="44.20", date=datetime.now(UTC).isoformat(), meet="Penn Relays"),
             breakout=BreakoutScore(
                 score=87,
                 band="Breakout Priority",
@@ -360,7 +360,7 @@ def explain(payload: ExplainRequest) -> Envelope[ExplainResponse]:
 
 @app.post("/notifications/queue")
 def queue_notification(payload: NotificationQueueRequest) -> Envelope[NotificationQueueResult]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     effective_cooldown = max(_COOLDOWN_FLOOR_SECONDS, payload.cooldownSeconds)
 
     deduped = False

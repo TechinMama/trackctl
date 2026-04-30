@@ -27,12 +27,16 @@ jobs:
       - name: SwiftPM tests
         run: swift test
 
+      - name: Install xcpretty
+        run: gem install xcpretty --no-document
+
       - name: iOS build
         run: |
+          set -o pipefail
           xcodebuild \
             -project Athena.xcodeproj \
             -scheme Athena \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             build \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty && exit ${PIPESTATUS[0]}
+            | xcpretty
