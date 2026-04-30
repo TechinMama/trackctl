@@ -93,6 +93,9 @@ class AthleteViewModel {
         if let warning = response.metadata.warning {
             AthenaLogger.shared.warning("athletes_load_warning", props: ["reason": warning])
         }
+        if athletes.isEmpty {
+            errorMessage = response.metadata.warning ?? "No live athlete data available yet."
+        }
         AthenaLogger.shared.event("athletes_loaded", props: ["count": athletes.count])
         isLoading = false
     }

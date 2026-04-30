@@ -17,12 +17,16 @@ This folder provisions Azure infrastructure for the Athena backend.
 ```bash
 cd infra/terraform
 terraform init
-terraform plan -var-file=envs/dev/dev.tfvars
-terraform apply -var-file=envs/dev/dev.tfvars
+terraform plan -var-file=envs/dev/dev.tfvars.example
+terraform apply -var-file=envs/dev/dev.tfvars.example
+
+# Test profile
+terraform plan -var-file=envs/test/test.tfvars.example
+terraform apply -var-file=envs/test/test.tfvars.example
 
 # Production profile
-terraform plan -var-file=envs/prod/prod.tfvars
-terraform apply -var-file=envs/prod/prod.tfvars
+terraform plan -var-file=envs/prod/prod.tfvars.example
+terraform apply -var-file=envs/prod/prod.tfvars.example
 ```
 
 ## Notes
@@ -49,6 +53,16 @@ Required workflow capability:
 - `permissions: id-token: write`
 
 Once those are configured, add an Azure login step before `terraform plan` so the AzureRM provider can resolve the tenant and subscription context.
+
+## Apply guardrail for test/prod
+
+The apply workflow exposes `dev`, `test`, and `prod` options. Non-dev applies are blocked by default.
+
+To allow `test` or `prod` applies:
+
+- Set repository variable `ENABLE_NON_DEV_APPLY=true`
+- Create matching GitHub Environments (`test`, `prod`) with approvals
+- Add OIDC federated credentials for `environment:test` and `environment:prod`
 
 ## Cost-efficient dev profile
 

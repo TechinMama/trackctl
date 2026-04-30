@@ -3,9 +3,9 @@ location    = "eastus2"
 
 # Optional: set this when globally-unique names like Key Vault or PostgreSQL
 # conflict with existing names in Azure.
-resource_name_suffix = ""
+resource_name_suffix = "d1"
 
-container_image = "<acr-login-server>/athena-backend:dev"
+container_image = "acrathenadev.azurecr.io/athena-backend:dev"
 
 # Cost-efficient defaults until traffic arrives.
 container_min_replicas = 0

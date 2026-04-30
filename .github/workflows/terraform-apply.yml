@@ -10,6 +10,8 @@ on:
         type: choice
         options:
           - dev
+          - test
+          - prod
 
 concurrency:
   group: terraform-apply-${{ inputs.environment || 'dev' }}
@@ -32,6 +34,7 @@ jobs:
       TF_BACKEND_STORAGE_ACCOUNT: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
       TF_BACKEND_CONTAINER: ${{ secrets.TF_BACKEND_CONTAINER }}
       TARGET_ENV: ${{ inputs.environment || 'dev' }}
+      ENABLE_NON_DEV_APPLY: ${{ vars.ENABLE_NON_DEV_APPLY || 'false' }}
 
     defaults:
       run:
@@ -67,6 +70,15 @@ jobs:
             -backend-config="container_name=${TF_BACKEND_CT}" \
             -backend-config="key=${{ env.TARGET_ENV }}.tfstate"
 
+      - name: Guardrail for non-dev apply
+        run: |
+          if [ "${TARGET_ENV}" != "dev" ] && [ "${ENABLE_NON_DEV_APPLY}" != "true" ]; then
+            echo "Non-dev apply is currently disabled."
+            echo "To enable test/prod applies, set repository variable ENABLE_NON_DEV_APPLY=true"
+            echo "and ensure matching GitHub Environment + OIDC credentials exist for ${TARGET_ENV}."
+            exit 1
+          fi
+
       - name: Import existing resources into state (if present)
         env:
           ARM_USE_OIDC: true
@@ -75,6 +87,12 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
         run: |
           TFVARS_FILE="envs/${TARGET_ENV}/${TARGET_ENV}.tfvars.example"
+          if [ ! -f "$TFVARS_FILE" ]; then
+            echo "Missing tfvars file: $TFVARS_FILE"
+            echo "Create it before running apply for ${TARGET_ENV}."
+            exit 1
+          fi
+
           RAW_SUFFIX=$(awk -F= '/^resource_name_suffix[[:space:]]*=/{print $2; exit}' "$TFVARS_FILE" | tr -d ' "')
           NAME_SUFFIX=""
           if [ -n "$RAW_SUFFIX" ]; then
@@ -150,3 +168,27 @@ jobs:
             -auto-approve \
             -input=false \
             -var-file=envs/${{ env.TARGET_ENV }}/${{ env.TARGET_ENV }}.tfvars.example
+
+      - name: Resolve backend URL
+        id: outputs
+        run: |
+          BACKEND_URL=$(terraform output -raw container_app_url)
+          echo "backend_url=https://${BACKEND_URL}" >> "$GITHUB_OUTPUT"
+          echo "Backend URL: https://${BACKEND_URL}"
+
+      - name: Health check backend
+        run: |
+          URL="${{ steps.outputs.outputs.backend_url }}/health"
+          echo "Checking ${URL}"
+
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if curl -fsS "$URL" >/tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Health check attempt ${attempt} failed; retrying..."
+            sleep 10
+          done
+
+          echo "Backend health check failed after retries."
+          exit 1

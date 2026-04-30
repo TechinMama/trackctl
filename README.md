@@ -106,6 +106,13 @@ Required GitHub secrets for release workflow:
 - `APPSTORE_API_KEY_ID`
 - `APPSTORE_API_ISSUER_ID`
 - `APPSTORE_API_PRIVATE_KEY`
+- `ATHENA_API_BASE_URL` (must be `https://...` and point to your deployed backend)
+
+Notes for `ATHENA_API_BASE_URL`:
+
+- A custom purchased domain is optional.
+- You can use the default Azure Container Apps endpoint (`https://<app>.<region>.azurecontainerapps.io`) for TestFlight and initial production.
+- If you later purchase a domain, map it to Container Apps and update `ATHENA_API_BASE_URL`.
 
 ## Cost Guardrails
 - Start dev with the low-traffic Terraform profile (`infra/terraform/envs/dev/dev.tfvars.example`) and scale to zero where safe.

@@ -14,8 +14,23 @@ struct SettingsView: View {
     @AppStorage("athena.notifyDistance") private var notifyDistance = true
     @AppStorage("athena.notifyField") private var notifyField = true
     @AppStorage("athena.liveAPIEnabled") private var liveAPIEnabled = true
+    @AppStorage("athena.requireLiveData") private var requireLiveData = true
     @AppStorage("athena.apiBaseURL") private var apiBaseURL = "http://localhost:8080"
     @AppStorage("athena.notificationDeliveryMode") private var notificationDeliveryMode = "local"
+
+    private var managedAPISettings: Bool {
+        if let value = Bundle.main.object(forInfoDictionaryKey: "AthenaManagedAPISettings") as? Bool {
+            return value
+        }
+        if let value = Bundle.main.object(forInfoDictionaryKey: "AthenaManagedAPISettings") as? String {
+            return ["1", "true", "yes"].contains(value.lowercased())
+        }
+#if DEBUG
+        return false
+#else
+        return true
+#endif
+    }
     
     var body: some View {
         NavigationStack {
@@ -69,16 +84,24 @@ struct SettingsView: View {
 
                     Section("Data Source") {
                         Toggle("Use Live API", isOn: $liveAPIEnabled)
+                        Toggle("Require Live API", isOn: $requireLiveData)
 
                         TextField("Base URL", text: $apiBaseURL)
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
                             .keyboardType(.URL)
 
-                        Text("If live API is unavailable, Athena automatically falls back to local data.")
+                        Text("If live API is unavailable, Athena falls back to cached live snapshots only (never bundled local mock data).")
                             .font(.caption)
                             .foregroundStyle(AthenaTheme.stone)
+
+                        if managedAPISettings {
+                            Text("API settings are managed by this build configuration.")
+                                .font(.caption)
+                                .foregroundStyle(AthenaTheme.stone)
+                        }
                     }
+                    .disabled(managedAPISettings)
 
                     Section("Notification Delivery") {
                         Picker("Delivery Mode", selection: $notificationDeliveryMode) {
