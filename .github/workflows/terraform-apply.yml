@@ -61,9 +61,9 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ env.TF_BACKEND_RESOURCE_GROUP }}" \
-            -backend-config="storage_account_name=${{ env.TF_BACKEND_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=${{ env.TF_BACKEND_CONTAINER }}" \
+            -backend-config="resource_group_name=${{ secrets.TF_BACKEND_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TF_BACKEND_CONTAINER }}" \
             -backend-config="key=${{ env.TARGET_ENV }}.tfstate"
 
       - name: Terraform apply
