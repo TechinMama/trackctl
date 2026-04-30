@@ -20,6 +20,10 @@ on:
 jobs:
   archive-and-release:
     runs-on: macos-latest
+    env:
+      APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+      APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,11 +86,7 @@ jobs:
           retention-days: 30
 
       - name: Upload to TestFlight
-        if: ${{ (github.event_name == 'push' || inputs.upload_to_testflight) && secrets.APPSTORE_API_KEY_ID != '' && secrets.APPSTORE_API_ISSUER_ID != '' && secrets.APPSTORE_API_PRIVATE_KEY != '' }}
-        env:
-          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
-          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
-          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+        if: (github.event_name == 'push' || inputs.upload_to_testflight) && env.APPSTORE_API_KEY_ID != '' && env.APPSTORE_API_ISSUER_ID != '' && env.APPSTORE_API_PRIVATE_KEY != ''
         run: |
           mkdir -p $RUNNER_TEMP/private_keys
           KEY_FILE=$RUNNER_TEMP/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8
