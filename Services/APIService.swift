@@ -31,6 +31,31 @@ private struct PersistedCacheEnvelope<Value: Codable>: Codable {
     let citations: [String]
 }
 
+private struct APIBodyMeta: Decodable {
+    let generatedAt: Date?
+    let sourceCitations: [String]?
+    let fallbackReason: String?
+}
+
+private struct APIBodyEnvelope<Value: Decodable>: Decodable {
+    let data: Value
+    let meta: APIBodyMeta?
+}
+
+struct InsightRequest: Encodable {
+    let feature: String
+    let facts: [String: String]
+    let analytics: [String: Double]
+    let context: [String: String]
+    let sources: [String]
+}
+
+struct InsightResult: Decodable {
+    let text: String?
+    let source: String
+    let guardrailed: Bool
+}
+
 // MARK: - Live API service with resilient local fallback.
 actor APIService {
     static let shared = APIService()
@@ -71,11 +96,7 @@ actor APIService {
 
     private var liveAPIEnabled: Bool {
         if UserDefaults.standard.object(forKey: liveAPIEnabledKey) == nil {
-#if targetEnvironment(simulator)
-            return false
-#else
             return true
-#endif
         }
         return UserDefaults.standard.bool(forKey: liveAPIEnabledKey)
     }
@@ -130,18 +151,21 @@ actor APIService {
         )
     }
 
-    private func metadata(from response: HTTPURLResponse, now: Date = Date()) -> APIFetchMetadata {
-        let generatedAt: Date?
-        if let header = response.value(forHTTPHeaderField: "X-Generated-At") {
-            generatedAt = ISO8601DateFormatter().date(from: header)
-        } else {
-            generatedAt = nil
-        }
+    private func metadata(from response: HTTPURLResponse, bodyMeta: APIBodyMeta? = nil, now: Date = Date()) -> APIFetchMetadata {
+        let generatedAt = bodyMeta?.generatedAt ?? {
+            guard let header = response.value(forHTTPHeaderField: "X-Generated-At") else { return nil }
+            return ISO8601DateFormatter().date(from: header)
+        }()
 
-        let citations = response.value(forHTTPHeaderField: "X-Source-Citations")?
-            .split(separator: "|")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty } ?? [NotificationService.sourceCitationText]
+        let citations: [String]
+        if let bodyCitations = bodyMeta?.sourceCitations, !bodyCitations.isEmpty {
+            citations = bodyCitations
+        } else {
+            citations = response.value(forHTTPHeaderField: "X-Source-Citations")?
+                .split(separator: "|")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty } ?? [NotificationService.sourceCitationText]
+        }
 
         return APIFetchMetadata(
             source: .remote,
@@ -149,7 +173,7 @@ actor APIService {
             generatedAt: generatedAt,
             staleAfter: now.addingTimeInterval(staleInterval),
             citations: citations,
-            warning: nil
+            warning: bodyMeta?.fallbackReason
         )
     }
 
@@ -261,7 +285,6 @@ actor APIService {
             country: athlete.country,
             discipline: athlete.discipline,
             personalBest: athlete.personalBest,
-            profileImageURL: athlete.profileImageURL,
             isFollowing: athlete.isFollowing,
             recentResults: athlete.recentResults.map(guardrailResult)
         )
@@ -314,6 +337,13 @@ actor APIService {
             throw APIError.httpStatus(http.statusCode)
         }
 
+        if let wrapped = try? decoder.decode(APIBodyEnvelope<T>.self, from: data) {
+            return APIResponse(
+                value: wrapped.data,
+                metadata: metadata(from: http, bodyMeta: wrapped.meta)
+            )
+        }
+
         let decoded = try decoder.decode(T.self, from: data)
         return APIResponse(value: decoded, metadata: metadata(from: http))
     }
@@ -361,10 +391,12 @@ actor APIService {
 
     // MARK: - Athletes
 
-    func fetchAthletes() async -> APIResponse<[Athlete]> {
+    func fetchAthletes(activeOnly: Bool = true, runnersOnly: Bool = true, limit: Int? = nil) async -> APIResponse<[Athlete]> {
+        var path = "athletes?active_only=\(activeOnly)&runners_only=\(runnersOnly)"
+        if let limit { path += "&limit=\(limit)" }
         let response = await fetchWithFallback(
             [Athlete].self,
-            path: "athletes",
+            path: path,
             cacheKey: CacheKey.athletes.rawValue
         ) { MockData.athletes }
         let guardedAthletes = response.value.map(guardrailAthlete)
@@ -435,6 +467,56 @@ actor APIService {
         let guardedStorylines = response.value.map(guardrailStoryline)
         storylineCache = guardedStorylines
         return APIResponse(value: guardedStorylines, metadata: response.metadata)
+    }
+
+    // MARK: - Insight
+
+    func fetchInsight(
+        feature: String,
+        facts: [String: String] = [:],
+        analytics: [String: Double] = [:],
+        context: [String: String] = [:],
+        sources: [String] = []
+    ) async throws -> APIResponse<InsightResult> {
+        guard liveAPIEnabled, let base = baseURL else {
+            throw APIError.invalidBaseURL
+        }
+
+        let url = base.appendingPathComponent("insights/explain")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = InsightRequest(
+            feature: feature,
+            facts: facts,
+            analytics: analytics,
+            context: context,
+            sources: sources
+        )
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        request.httpBody = try encoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw APIError.httpStatus(http.statusCode)
+        }
+
+        if let wrapped = try? decoder.decode(APIBodyEnvelope<InsightResult>.self, from: data) {
+            let sanitized = InsightResult(
+                text: sanitizeInsight(wrapped.data.text),
+                source: wrapped.data.source,
+                guardrailed: wrapped.data.guardrailed
+            )
+            return APIResponse(value: sanitized, metadata: metadata(from: http, bodyMeta: wrapped.meta))
+        }
+
+        let decoded = try decoder.decode(InsightResult.self, from: data)
+        return APIResponse(value: decoded, metadata: metadata(from: http))
     }
 }
 
@@ -522,7 +604,6 @@ private enum MockData {
             country: "USA",
             discipline: "400m Hurdles",
             personalBest: "50.68 WR",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Sydney+McLaughlin-Levrone&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: [results[0]]
         ),
@@ -532,7 +613,6 @@ private enum MockData {
             country: "USA",
             discipline: "100m / 200m",
             personalBest: "9.83 / 19.70",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Noah+Lyles&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: [results[1]]
         ),
@@ -542,7 +622,6 @@ private enum MockData {
             country: "KEN",
             discipline: "1500m",
             personalBest: "3:49.11 WR",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Faith+Kipyegon&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: [results[2]]
         ),
@@ -552,7 +631,6 @@ private enum MockData {
             country: "SWE",
             discipline: "Pole Vault",
             personalBest: "6.26m WR",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Armand+Duplantis&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: [results[3]]
         ),
@@ -562,7 +640,6 @@ private enum MockData {
             country: "USA",
             discipline: "100m / 200m",
             personalBest: "10.71 / 21.60",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Sha%27Carri+Richardson&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: [results[4]]
         ),
@@ -572,7 +649,6 @@ private enum MockData {
             country: "ITA",
             discipline: "100m",
             personalBest: "9.80",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Marcell+Jacobs&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: []
         ),
@@ -582,7 +658,6 @@ private enum MockData {
             country: "USA",
             discipline: "800m",
             personalBest: "1:55.04",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Athing+Mu&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: []
         ),
@@ -592,7 +667,6 @@ private enum MockData {
             country: "NOR",
             discipline: "1500m / 5000m",
             personalBest: "3:43.73 / 12:48.45",
-            profileImageURL: URL(string: "https://ui-avatars.com/api/?name=Jakob+Ingebrigtsen&background=1A2026&color=F2EDE0&size=256"),
             isFollowing: false,
             recentResults: []
         )

@@ -3,7 +3,7 @@ import SwiftUI
 struct AthleteListView: View {
     @Environment(AthleteViewModel.self) var viewModel
     @State private var selectedAthlete: Athlete?
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -27,35 +27,71 @@ struct AthleteListView: View {
                             .listRowBackground(Color.clear)
                         }
 
-                        Section {
-                            if viewModel.followingAthletes.isEmpty {
+                        if viewModel.searchQuery.isEmpty {
+                            Section {
+                                if viewModel.followingAthletes.isEmpty {
                                     Text("Follow athletes to see them first in your Following section.")
-                                    .foregroundStyle(AthenaTheme.inkMuted)
-                            } else {
-                                ForEach(viewModel.followingAthletes) { athlete in
-                                    NavigationLink(destination: AthleteDetailView(athlete: athlete)) {
-                                        AthleteRowView(athlete: athlete)
+                                        .foregroundStyle(AthenaTheme.inkMuted)
+                                } else {
+                                    ForEach(viewModel.followingAthletes) { athlete in
+                                        NavigationLink(destination: AthleteDetailView(athlete: athlete)) {
+                                            AthleteRowView(athlete: athlete)
+                                        }
                                     }
                                 }
+                            } header: {
+                                AthenaSectionHeader("Following", detail: "Athletes you actively track.", onLightBackground: true)
                             }
-                        } header: {
-                            AthenaSectionHeader("Following", detail: "Athletes you actively track.", onLightBackground: true)
+                            .listRowBackground(Color.clear)
                         }
 
                         Section {
-                            ForEach(viewModel.athletes) { athlete in
+                            ForEach(viewModel.filteredAthletes) { athlete in
                                 NavigationLink(destination: AthleteDetailView(athlete: athlete)) {
                                     AthleteRowView(athlete: athlete)
                                 }
                             }
+                            if viewModel.hasMoreAthletes {
+                                Button {
+                                    viewModel.loadNextPage()
+                                } label: {
+                                    HStack {
+                                        Spacer()
+                                        Text("Load more")
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundStyle(AthenaTheme.teal)
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 10)
+                                }
+                                .listRowBackground(Color.clear)
+                            }
                         } header: {
-                            AthenaSectionHeader("Athlete Directory", detail: "Browse all available athlete profiles.", onLightBackground: true)
+                            AthenaSectionHeader(
+                                "Athlete Directory",
+                                detail: viewModel.searchQuery.isEmpty
+                                    ? "Browse all available athlete profiles."
+                                    : "Search results",
+                                onLightBackground: true
+                            )
                         }
+                        .listRowBackground(Color.clear)
                     }
                     .scrollContentBackground(.hidden)
+                    .scrollDisabled(false)
+                    .background(Color.clear)
                     .listStyle(.insetGrouped)
                     .listRowSpacing(10)
                     .environment(\.defaultMinListRowHeight, 68)
+                    .searchable(
+                        text: Binding(
+                            get: { viewModel.searchQuery },
+                            set: { newValue in
+                                viewModel.updateSearchQuery(newValue)
+                            }
+                        ),
+                        prompt: "Search name, country, or discipline"
+                    )
                 }
             }
             .navigationTitle("Athletes")
@@ -88,6 +124,23 @@ struct AthleteRowView: View {
                         .font(.caption)
                         .foregroundStyle(AthenaTheme.stone)
                 }
+
+                let eventLabels = viewModel.athleteEventLabels(for: athlete, limit: 2)
+                if !eventLabels.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(eventLabels, id: \.self) { label in
+                            Text(label)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(AthenaTheme.bone)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .fill(AthenaTheme.tealMuted.opacity(0.8))
+                                )
+                        }
+                    }
+                }
             }
             
             Spacer()
@@ -117,7 +170,12 @@ struct AthleteRowView: View {
 struct AthleteDetailView: View {
     let athlete: Athlete
     @Environment(AthleteViewModel.self) var viewModel
+    @Environment(AnalyticsViewModel.self) var analyticsViewModel
     @State private var athleteNotificationsEnabled = true
+        @State private var insightText: String? = nil
+        @State private var insightCitations: [String] = []
+        @State private var insightSource: String = "deterministic"
+        @State private var insightLoading = false
     
     var body: some View {
         // Use live athlete state from ViewModel so follow toggle updates immediately
@@ -131,13 +189,7 @@ struct AthleteDetailView: View {
                         title: liveAthlete.name,
                         subtitle: "\(liveAthlete.discipline) • \(liveAthlete.country)",
                         eyebrow: "Athlete profile",
-                        pills: [
-                            .init(label: "Profile", systemImage: "person.text.rectangle"),
-                            .init(label: "Insightful", systemImage: "eye.fill"),
-                            .init(label: "Analytical", systemImage: "chart.line.uptrend.xyaxis"),
-                            .init(label: "Performant", systemImage: "figure.run"),
-                            .init(label: "Fast", systemImage: "bolt.fill")
-                        ]
+                        pills: athleteHeaderPills(for: liveAthlete)
                     )
 
                     HStack(spacing: 12) {
@@ -223,6 +275,18 @@ struct AthleteDetailView: View {
                     .padding()
                     .athenaCard()
 
+                    BreakoutRadarCard(score: analyticsViewModel.breakoutRadar(for: liveAthlete))
+
+                    // AI Performance Insight card – storyboard Scene 4
+                    if insightLoading || insightText != nil {
+                        InsightCardView(
+                            text: insightText ?? "",
+                            citations: insightCitations,
+                            isLoading: insightLoading,
+                            source: insightSource
+                        )
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Personal Best")
                             .font(.headline)
@@ -233,6 +297,24 @@ struct AthleteDetailView: View {
                     }
                     .padding()
                     .athenaCard()
+
+                    RecordThreatCard(score: analyticsViewModel.recordThreat(for: liveAthlete))
+
+                    let rivals = analyticsViewModel.topRivals(
+                        for: liveAthlete,
+                        candidates: viewModel.athletes,
+                        momentumScore: { viewModel.momentumScore(for: $0) }
+                    )
+                    if !rivals.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            AthenaSectionHeader("Rivalry Heat", detail: "Top competitive pairings by shared discipline, proximity, and head-to-head history.")
+                            ForEach(rivals, id: \.0.id) { (rival, heat) in
+                                RivalryHeatRow(rivalry: heat, rivalName: rival.name)
+                            }
+                        }
+                        .padding()
+                        .athenaCard()
+                    }
 
                     VStack(alignment: .leading, spacing: 12) {
                         AthenaSectionHeader("Recent Results", detail: "Performance context and intelligence.")
@@ -261,6 +343,39 @@ struct AthleteDetailView: View {
         .onAppear {
             athleteNotificationsEnabled = viewModel.isAthleteNotificationEnabled(id: athlete.id)
         }
+        .task(id: athlete.id) {
+            await loadInsight(for: liveAthlete)
+        }
+    }
+
+    private func loadInsight(for athlete: Athlete) async {
+        insightLoading = true
+        defer { insightLoading = false }
+        do {
+            let response = try await APIService.shared.fetchInsight(
+                feature: "momentum",
+                facts: ["name": athlete.name, "discipline": athlete.discipline, "personalBest": athlete.personalBest],
+                analytics: ["momentum": Double(viewModel.momentumScore(for: athlete))],
+                context: ["country": athlete.country],
+                sources: ["World Athletics", "FloTrack"]
+            )
+            insightText = response.value.text ?? "Insight unavailable pending source coverage."
+            insightCitations = response.metadata.citations
+            insightSource = response.value.source
+        } catch {
+            insightText = nil
+        }
+    }
+
+    private func athleteHeaderPills(for athlete: Athlete) -> [AthenaHeroHeader.PillItem] {
+        let labels = viewModel.athleteEventLabels(for: athlete, limit: 5)
+        if labels.isEmpty {
+            return [
+                .init(label: "Profile", systemImage: "person.text.rectangle")
+            ]
+        }
+
+        return labels.map { .init(label: $0, systemImage: "figure.run") }
     }
 }
 
@@ -269,22 +384,7 @@ struct AthleteAvatarView: View {
     var size: CGFloat
 
     var body: some View {
-        Group {
-            if let url = athlete.profileImageURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        placeholder
-                    }
-                }
-            } else {
-                placeholder
-            }
-        }
+        placeholder
         .frame(width: size, height: size)
         .clipShape(Circle())
         .overlay(Circle().stroke(AthenaTheme.teal.opacity(0.55), lineWidth: 1.2))
@@ -318,6 +418,7 @@ struct AthleteAvatarView: View {
 
 struct ResultRowView: View {
     let result: Result
+    @Environment(AnalyticsViewModel.self) var analyticsViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -343,6 +444,7 @@ struct ResultRowView: View {
                             .foregroundStyle(AthenaTheme.teal)
                             .fontWeight(.semibold)
                     }
+                    RankingImpactBadge(score: analyticsViewModel.rankingImpact(for: result))
                 }
             }
 
@@ -370,4 +472,5 @@ struct ResultRowView: View {
 #Preview {
     AthleteListView()
         .environment(AthleteViewModel())
+        .environment(AnalyticsViewModel())
 }

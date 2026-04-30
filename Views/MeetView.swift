@@ -62,6 +62,8 @@ struct MeetListView: View {
                             }
                         }
                         .scrollContentBackground(.hidden)
+                        .scrollDisabled(false)
+                        .background(Color.clear)
                         .listStyle(.plain)
 
                         Text(viewModel.sourceCitationText)

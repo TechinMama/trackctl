@@ -89,8 +89,11 @@ struct HomeView: View {
                                     .padding(.horizontal)
 
                                 ForEach(viewModel.upcomingMeets.prefix(3)) { meet in
-                                    MeetCardView(meet: meet)
-                                        .padding(.horizontal)
+                                    NavigationLink(destination: MeetDetailView(meet: meet)) {
+                                        MeetCardView(meet: meet)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.horizontal)
                                 }
                             }
 
@@ -172,7 +175,7 @@ struct MeetCardView: View {
                     .foregroundStyle(AthenaTheme.bone)
                 Spacer()
                 if let _ = meet.watchURL {
-                    Label("Live", systemImage: "play.circle.fill")
+                    Label("Watch", systemImage: "play.circle.fill")
                         .font(.caption)
                         .foregroundStyle(AthenaTheme.teal)
                 }

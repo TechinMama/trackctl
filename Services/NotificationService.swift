@@ -407,6 +407,67 @@ class NotificationService {
         return "mixed"
     }
 
+    /// Trigger a notification with an associated analytics signal (e.g. Breakout Priority, Must Watch).
+    /// Routes through backend queue when `deliveryMode == .backend`, falls back to local.
+    func scheduleAnalyticsAlert(
+        title: String,
+        body: String,
+        identifier: String,
+        feature: String,
+        score: Int,
+        band: String,
+        cooldownSeconds: Int = 3 * 3600
+    ) {
+        guard notificationsEnabled else { return }
+        guard shouldSendNotification(identifier: identifier, cooldown: TimeInterval(cooldownSeconds)) else { return }
+
+        if deliveryMode == .backend {
+            Task {
+                guard let base = apiBaseURL else { return }
+                let endpoint = base.appendingPathComponent("notifications/queue")
+                var request = URLRequest(url: endpoint)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                let payload = BackendNotificationQueueRequest(
+                    id: identifier,
+                    type: "analytics_alert",
+                    title: title,
+                    body: body,
+                    scheduledFor: ISO8601DateFormatter().string(from: Date()),
+                    cooldownSeconds: cooldownSeconds,
+                    userContext: .init(
+                        followedAthleteId: nil,
+                        eventGroup: "mixed",
+                        frequency: notificationFrequency.rawValue
+                    ),
+                    analytics: .init(feature: feature, score: score, band: band)
+                )
+                do {
+                    request.httpBody = try JSONEncoder().encode(payload)
+                    let (_, response) = try await session.data(for: request)
+                    if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                        print("Analytics alert queue failed: status \(http.statusCode)")
+                    }
+                } catch {
+                    print("Analytics alert queue error: \(error.localizedDescription)")
+                }
+            }
+            return
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        UNUserNotificationCenter.current().add(
+            UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        ) { error in
+            if let error { print("Analytics alert local schedule error: \(error)") }
+        }
+    }
+
     func resetNotificationPreferences() {
         let defaults = UserDefaults.standard
         [

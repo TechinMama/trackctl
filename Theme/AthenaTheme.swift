@@ -68,6 +68,7 @@ struct AthenaBackdrop: View {
                 }
             }
         }
+        .allowsHitTesting(false)
     }
 }
 
@@ -96,7 +97,7 @@ struct AthenaMark: View {
                 ZStack {
                     Circle()
                         .trim(from: 0.10, to: 0.86)
-                        .stroke(AthenaTheme.tealMuted.opacity(0.30), lineWidth: w * 0.05)
+                        .stroke(AthenaTheme.teal.opacity(0.85), lineWidth: w * 0.05)
                         .frame(width: w * 0.88, height: h * 0.88)
 
                     Path { path in
@@ -130,6 +131,8 @@ struct AthenaMark: View {
 }
 
 struct AthenaHeroHeader: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     struct PillItem {
         let label: String
         let systemImage: String
@@ -145,6 +148,14 @@ struct AthenaHeroHeader: View {
         PillItem(label: "Performant", systemImage: "gauge.with.dots.needle.67percent"),
         PillItem(label: "Fast", systemImage: "bolt.fill")
     ]
+
+    private var isCompactWidth: Bool {
+        horizontalSizeClass == .compact
+    }
+
+    private var visiblePills: [PillItem] {
+        isCompactWidth ? Array(pills.prefix(3)) : pills
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -168,9 +179,21 @@ struct AthenaHeroHeader: View {
                 }
             }
 
-            HStack(spacing: 10) {
-                ForEach(pills, id: \.label) { pill in
-                    AthenaPill(label: pill.label, systemImage: pill.systemImage)
+            if isCompactWidth {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 104), spacing: 8, alignment: .leading)],
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+                    ForEach(visiblePills, id: \.label) { pill in
+                        AthenaPill(label: pill.label, systemImage: pill.systemImage, compact: true)
+                    }
+                }
+            } else {
+                HStack(spacing: 10) {
+                    ForEach(visiblePills, id: \.label) { pill in
+                        AthenaPill(label: pill.label, systemImage: pill.systemImage)
+                    }
                 }
             }
         }
@@ -202,13 +225,16 @@ struct AthenaHeroHeader: View {
 struct AthenaPill: View {
     let label: String
     let systemImage: String
+    var compact: Bool = false
 
     var body: some View {
         Label(label, systemImage: systemImage)
-            .font(.caption.weight(.semibold))
+            .font((compact ? Font.caption2 : Font.caption).weight(.semibold))
             .foregroundStyle(AthenaTheme.bone)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .padding(.horizontal, compact ? 9 : 12)
+            .padding(.vertical, compact ? 6 : 7)
             .background(
                 Capsule(style: .continuous)
                     .fill(AthenaTheme.luxePanelGradient)

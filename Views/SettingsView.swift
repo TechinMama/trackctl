@@ -146,11 +146,15 @@ struct SettingsView: View {
                     
                     Section("Links") {
                         Link("About Athena", destination: URL(string: "https://athena.example.com")!)
-                        Link("Privacy Policy", destination: URL(string: "https://athena.example.com/privacy")!)
+                        NavigationLink("Privacy Policy") {
+                            PrivacyView()
+                        }
                         Link("Contact Support", destination: URL(string: "mailto:support@athena.example.com")!)
                     }
                 }
                 .scrollContentBackground(.hidden)
+                .scrollDisabled(false)
+                .background(Color.clear)
             }
             .navigationTitle("Settings")
         }
