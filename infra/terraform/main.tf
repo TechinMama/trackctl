@@ -1,5 +1,6 @@
 locals {
   base_name = "${var.project}-${var.environment}"
+  global_name_suffix = trimspace(var.resource_name_suffix) != "" ? "-${trimspace(var.resource_name_suffix)}" : ""
 
   tags = merge(var.tags, {
     project     = var.project
@@ -59,7 +60,7 @@ module "container_apps" {
 module "postgres" {
   source = "./modules/postgres"
 
-  server_name         = "psql-${local.base_name}"
+  server_name         = "psql-${local.base_name}${local.global_name_suffix}"
   database_name       = "athena"
   resource_group_name = module.resource_group.name
   location            = module.resource_group.location
@@ -84,7 +85,7 @@ module "servicebus" {
 module "key_vault" {
   source = "./modules/key_vault"
 
-  key_vault_name      = "kv-${local.base_name}"
+  key_vault_name      = "kv-${local.base_name}${local.global_name_suffix}"
   resource_group_name = module.resource_group.name
   location            = module.resource_group.location
   tenant_id           = module.container_apps.principal_tenant_id

@@ -1,6 +1,10 @@
 environment = "dev"
 location    = "eastus2"
 
+# Optional: set this when globally-unique names like Key Vault or PostgreSQL
+# conflict with existing names in Azure.
+resource_name_suffix = ""
+
 container_image = "<acr-login-server>/athena-backend:dev"
 
 # Cost-efficient defaults until traffic arrives.

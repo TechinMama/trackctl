@@ -9,6 +9,12 @@ variable "environment" {
   type        = string
 }
 
+variable "resource_name_suffix" {
+  description = "Optional suffix appended to globally unique resource names (for example Key Vault and PostgreSQL server) to avoid name collisions."
+  type        = string
+  default     = ""
+}
+
 variable "location" {
   description = "Azure region for resources."
   type        = string

@@ -10,16 +10,10 @@ on:
         type: choice
         options:
           - dev
-  push:
-    branches:
-      - dev
-    paths:
-      - infra/terraform/**
-      - .github/workflows/terraform-apply.yml
 
 concurrency:
-  group: terraform-${{ github.ref }}
-  cancel-in-progress: false
+  group: terraform-apply-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: true
 
 jobs:
   apply:
@@ -73,6 +67,77 @@ jobs:
             -backend-config="container_name=${TF_BACKEND_CT}" \
             -backend-config="key=${{ env.TARGET_ENV }}.tfstate"
 
+      - name: Import existing resources into state (if present)
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          TFVARS_FILE="envs/${TARGET_ENV}/${TARGET_ENV}.tfvars.example"
+          RAW_SUFFIX=$(awk -F= '/^resource_name_suffix[[:space:]]*=/{print $2; exit}' "$TFVARS_FILE" | tr -d ' "')
+          NAME_SUFFIX=""
+          if [ -n "$RAW_SUFFIX" ]; then
+            NAME_SUFFIX="-$RAW_SUFFIX"
+          fi
+
+          RG="rg-athena-${TARGET_ENV}"
+          CAE_NAME="cae-athena-${TARGET_ENV}"
+          APPI_NAME="appi-athena-${TARGET_ENV}"
+          PSQL_NAME="psql-athena-${TARGET_ENV}${NAME_SUFFIX}"
+          KV_NAME="kv-athena-${TARGET_ENV}${NAME_SUFFIX}"
+
+          maybe_import() {
+            local address="$1"
+            local resource_id="$2"
+
+            if terraform state show "$address" >/dev/null 2>&1; then
+              echo "Already in state: $address"
+              return 0
+            fi
+
+            echo "Importing $address"
+            terraform import "$address" "$resource_id" || true
+          }
+
+          CAE_ID=$(az containerapp env show -g "$RG" -n "$CAE_NAME" --query id -o tsv 2>/dev/null || true)
+          if [ -n "$CAE_ID" ]; then
+            maybe_import "module.container_apps.azurerm_container_app_environment.this" "$CAE_ID"
+          fi
+
+          APPI_ID=$(az monitor app-insights component show -g "$RG" -a "$APPI_NAME" --query id -o tsv 2>/dev/null || true)
+          if [ -n "$APPI_ID" ]; then
+            maybe_import "module.observability.azurerm_application_insights.this" "$APPI_ID"
+          fi
+
+          KV_ID=$(az keyvault show -n "$KV_NAME" --query id -o tsv 2>/dev/null || true)
+          if [ -n "$KV_ID" ]; then
+            maybe_import "module.key_vault.azurerm_key_vault.this" "$KV_ID"
+          fi
+
+          PSQL_ID=$(az postgres flexible-server show -g "$RG" -n "$PSQL_NAME" --query id -o tsv 2>/dev/null || true)
+          if [ -n "$PSQL_ID" ]; then
+            maybe_import "module.postgres.azurerm_postgresql_flexible_server.this" "$PSQL_ID"
+          fi
+
+          if [ -z "$KV_ID" ]; then
+            KV_AVAILABLE=$(az keyvault check-name --name "$KV_NAME" --query nameAvailable -o tsv 2>/dev/null || echo true)
+            if [ "$KV_AVAILABLE" != "true" ]; then
+              echo "Key Vault name '$KV_NAME' is unavailable and not importable in this subscription."
+              echo "Set resource_name_suffix in $TFVARS_FILE (for example resource_name_suffix = \"a1\") and rerun."
+              exit 1
+            fi
+          fi
+
+          if [ -z "$PSQL_ID" ]; then
+            PSQL_AVAILABLE=$(az postgres flexible-server check-name-availability --name "$PSQL_NAME" --query nameAvailable -o tsv 2>/dev/null || echo true)
+            if [ "$PSQL_AVAILABLE" != "true" ]; then
+              echo "PostgreSQL server name '$PSQL_NAME' is unavailable and not importable in this subscription."
+              echo "Set resource_name_suffix in $TFVARS_FILE (for example resource_name_suffix = \"a1\") and rerun."
+              exit 1
+            fi
+          fi
+
       - name: Terraform apply
         env:
           ARM_USE_OIDC: true
@@ -81,7 +146,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
         run: |
           terraform apply \
-            -lock-timeout=10m \
+            -lock-timeout=60s \
             -auto-approve \
             -input=false \
             -var-file=envs/${{ env.TARGET_ENV }}/${{ env.TARGET_ENV }}.tfvars.example
