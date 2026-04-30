@@ -19,6 +19,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: write
     env:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -54,6 +55,7 @@ jobs:
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: Terraform plan (dev example)
+        id: plan
         if: env.AZURE_CLIENT_ID != '' && env.AZURE_TENANT_ID != '' && env.AZURE_SUBSCRIPTION_ID != ''
         env:
           ARM_USE_OIDC: true
@@ -61,7 +63,50 @@ jobs:
           ARM_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
           TF_VAR_postgres_admin_password: ${{ env.TF_VAR_postgres_admin_password }}
-        run: terraform plan -input=false -var-file=envs/dev/dev.tfvars.example
+        run: |
+          terraform plan -input=false -var-file=envs/dev/dev.tfvars.example -no-color 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Post plan comment to PR
+        if: github.event_name == 'pull_request' && env.AZURE_CLIENT_ID != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planPath = 'infra/terraform/plan.txt';
+            if (!fs.existsSync(planPath)) { return; }
+            const raw = fs.readFileSync(planPath, 'utf8');
+            const plan = raw.length > 60000 ? raw.slice(0, 60000) + '\n\n_...output truncated..._' : raw;
+            const status = '${{ steps.plan.outputs.exitcode }}' === '0' ? '✅ success' : '⚠️ changes or errors';
+            const header = '<!-- terraform-plan -->';
+            const body = `${header}\n## Terraform Plan — ${status}\n\`\`\`\n${plan}\n\`\`\``;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(header));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail if plan errored
+        if: steps.plan.outputs.exitcode == '1'
+        run: exit 1
 
       - name: Terraform plan skipped
         if: env.AZURE_CLIENT_ID == '' || env.AZURE_TENANT_ID == '' || env.AZURE_SUBSCRIPTION_ID == ''
