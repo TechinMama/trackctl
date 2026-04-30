@@ -1,5 +1,6 @@
 .DS_Store
 .build/
+build/
 .swiftpm/
 swiftly.pkg
 *.xcuserstate
@@ -8,6 +9,10 @@ roadmap.md
 athena-roadmap.md
 .venv/
 .venv-*/
+.env
+backend/.env
+*.env
 **/.pytest_cache/
 **/__pycache__/
 *.pyc
+.sentryclirc

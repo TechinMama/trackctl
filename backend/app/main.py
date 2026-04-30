@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 
+from .logging_config import RequestLoggingMiddleware, configure_logging, log
 from .models import (
+    AthleteFull,
     AthleteRef,
     BreakoutItem,
     BreakoutScore,
@@ -19,6 +22,7 @@ from .models import (
     MilestoneScore,
     NotificationQueueRequest,
     NotificationQueueResult,
+    RecentResult,
     ResultRef,
     RivalryAthlete,
     RivalryItem,
@@ -26,9 +30,85 @@ from .models import (
 )
 
 app = FastAPI(title="Athena Backend", version="0.1.0")
+configure_logging(json_logs=True)
+app.add_middleware(RequestLoggingMiddleware)
 
+# ---------------------------------------------------------------------------
+# Hugging Face Inference – optional. Set HF_TOKEN env var to enable.
+# Falls back to deterministic generation when unset or on any HF error.
+# ---------------------------------------------------------------------------
+_HF_TOKEN: str | None = os.environ.get("HF_TOKEN")
+_HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
+_HF_MAX_TOKENS = 160  # generous buffer; contract enforcer trims to 40-100 words
+
+_SYSTEM_PROMPT = (
+    "You are Athena, a concise track-and-field analytics assistant. "
+    "Write a single analytical insight of exactly 40-100 words. "
+    "Use only the facts provided. Do not speculate beyond the data. "
+    "Do not mention yourself or use first person. "
+    "Do not make predictions — describe present-context signals only. "
+    "Do not add headers, bullet points, or formatting."
+)
+
+
+def _hf_explain(payload: "ExplainRequest") -> str | None:
+    """Call Hugging Face Inference API. Returns insight text or None on failure."""
+    if not _HF_TOKEN:
+        return None
+    try:
+        from huggingface_hub import InferenceClient  # deferred so missing dep doesn't break startup
+
+        name = payload.facts.get("name", "This athlete")
+        discipline = payload.facts.get("discipline", "their discipline")
+        personal_best = payload.facts.get("personalBest", "")
+        feature_label = payload.feature.replace("_", " ")
+        analytics_str = ", ".join(f"{k}: {v}" for k, v in payload.analytics.items())
+        sources_str = ", ".join(payload.sources) if payload.sources else "Athena analytics"
+
+        user_msg = (
+            f"Feature: {feature_label}\n"
+            f"Athlete: {name} | Discipline: {discipline}"
+            + (f" | Personal best: {personal_best}" if personal_best else "") + "\n"
+            f"Analytics: {analytics_str}\n"
+            f"Sources: {sources_str}\n"
+            "Write the insight now."
+        )
+
+        client = InferenceClient(model=_HF_MODEL, token=_HF_TOKEN)
+        result = client.chat_completion(
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": user_msg},
+            ],
+            max_tokens=_HF_MAX_TOKENS,
+            temperature=0.4,
+        )
+        text = result.choices[0].message.content
+        if not text:
+            return None
+        return _enforce_explain_contract(text.strip())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hf_explain_failed", error=str(exc), model=_HF_MODEL)
+        return None
+
+# In-memory notification store — replace with DB in production.
 _queue_store: list[NotificationQueueRequest] = []
 _last_sent: dict[str, datetime] = {}
+_COOLDOWN_FLOOR_SECONDS = 60  # never fire the same notification ID more than once per minute
+
+
+def _enforce_explain_contract(text: str) -> str:
+    """Ensure insight text stays inside the prompt contract range (40-100 words)."""
+    words = text.split()
+    if len(words) < 40:
+        extension = (
+            "Interpret this as present-context analysis only, not a prediction, "
+            "and use upcoming meet context with source coverage to refine confidence."
+        )
+        words.extend(extension.split())
+    if len(words) > 100:
+        words = words[:100]
+    return " ".join(words)
 
 
 def make_meta(citations: list[str], confidence: str, fallback_reason: str | None = None) -> Meta:
@@ -45,13 +125,86 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+_RUNNING_SIGNALS = {"100m", "200m", "400m", "800m", "1500m", "5000m", "10000m", "marathon",
+                    "hurdle", "steeplechase", "relay", "mile", "sprint", "distance", "run", "xc"}
+_FIELD_SIGNALS  = {"vault", "jump", "shot put", "discus", "javelin", "hammer", "heptathlon",
+                   "decathlon", "throws"}
+
+_ATHLETE_POOL: list[AthleteFull] = [
+    AthleteFull(id="a1", name="Sydney McLaughlin-Levrone", country="USA", discipline="400m Hurdles",
+                personalBest="50.65", recentResults=[
+                    RecentResult(id="r1", athleteID="a1", athleteName="Sydney McLaughlin-Levrone",
+                                 eventID="e1", eventName="400m Hurdles", placement=1, time="50.65",
+                                 date="2026-03-21T18:30:00Z")]),
+    AthleteFull(id="a2", name="Noah Lyles", country="USA", discipline="100m / 200m",
+                personalBest="9.79", recentResults=[
+                    RecentResult(id="r2", athleteID="a2", athleteName="Noah Lyles",
+                                 eventID="e2", eventName="100m", placement=1, time="9.81",
+                                 date="2026-03-22T19:15:00Z")]),
+    AthleteFull(id="a3", name="Mondo Duplantis", country="SWE", discipline="Pole Vault",
+                personalBest="6.25m", recentResults=[
+                    RecentResult(id="r3", athleteID="a3", athleteName="Mondo Duplantis",
+                                 eventID="e3", eventName="Pole Vault", placement=1,
+                                 date="2026-02-18T17:00:00Z")]),
+    AthleteFull(id="a4", name="Faith Kipyegon", country="KEN", discipline="1500m",
+                personalBest="3:49.11", recentResults=[
+                    RecentResult(id="r4", athleteID="a4", athleteName="Faith Kipyegon",
+                                 eventID="e4", eventName="1500m", placement=1,
+                                 date="2026-04-05T16:45:00Z")]),
+    AthleteFull(id="a5", name="Marcell Jacobs", country="ITA", discipline="100m",
+                personalBest="9.80", recentResults=[
+                    RecentResult(id="r5", athleteID="a5", athleteName="Marcell Jacobs",
+                                 eventID="e5", eventName="100m", placement=2, time="9.84",
+                                 date="2026-03-30T18:00:00Z")]),
+]
+
+
+def _is_runner(athlete: AthleteFull) -> bool:
+    text = " ".join([athlete.discipline] + [r.eventName for r in athlete.recentResults]).lower()
+    if any(sig in text for sig in _FIELD_SIGNALS):
+        return False
+    import re
+    if re.search(r"\b\d{2,5}m(h)?\b", text):
+        return True
+    return any(sig in text for sig in _RUNNING_SIGNALS)
+
+
 @app.get("/athletes")
-def athletes() -> Envelope[list[dict[str, str]]]:
-    data = [
-        {"id": "a1", "name": "Sydney McLaughlin-Levrone", "discipline": "400m Hurdles"},
-        {"id": "a2", "name": "Noah Lyles", "discipline": "100m / 200m"},
-    ]
-    return Envelope(data=data, meta=make_meta(["World Athletics", "FloTrack"], "high"))
+def athletes(
+    q: str | None = Query(default=None, description="Search by name, country, or discipline"),
+    active_only: bool = Query(default=False, description="Return only athletes with results in last 365 days"),
+    runners_only: bool = Query(default=False, description="Return only running-discipline athletes"),
+    limit: int = Query(default=200, ge=1, le=500),
+) -> Envelope[list[AthleteFull]]:
+    from datetime import timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(days=365)
+
+    pool = _ATHLETE_POOL
+
+    if runners_only:
+        pool = [a for a in pool if _is_runner(a)]
+
+    if active_only:
+        def _has_recent(a: AthleteFull) -> bool:
+            if not a.recentResults:
+                return False
+            from datetime import datetime
+            dates = []
+            for r in a.recentResults:
+                try:
+                    dates.append(datetime.fromisoformat(r.date.replace("Z", "+00:00")))
+                except ValueError:
+                    pass
+            return bool(dates) and max(dates) >= cutoff
+        pool = [a for a in pool if _has_recent(a)]
+
+    if q:
+        ql = q.lower()
+        pool = [a for a in pool
+                if ql in a.name.lower() or ql in a.country.lower() or ql in a.discipline.lower()]
+
+    pool = pool[:limit]
+    return Envelope(data=pool, meta=make_meta(["World Athletics", "FloTrack"], "high"))
 
 
 @app.get("/meets")
@@ -156,32 +309,84 @@ def milestones() -> Envelope[list[MilestoneItem]]:
 
 @app.post("/insights/explain")
 def explain(payload: ExplainRequest) -> Envelope[ExplainResponse]:
-    text = (
-        f"This {payload.feature.replace('_', ' ')} signal is based on verified competition facts and deterministic analytics, "
-        "with confidence adjusted to available source coverage."
+    # --- Try Hugging Face first -------------------------------------------
+    hf_text = _hf_explain(payload)
+    if hf_text:
+        log.info("hf_explain_ok", feature=payload.feature, model=_HF_MODEL)
+        response = ExplainResponse(text=hf_text, source="huggingface", guardrailed=True)
+        return Envelope(
+            data=response,
+            meta=make_meta(payload.sources or ["Athena Backend"], "high"),
+        )
+
+    # --- Deterministic fallback -------------------------------------------
+    name = payload.facts.get("name", "This athlete")
+    discipline = payload.facts.get("discipline", "their discipline")
+    personal_best = payload.facts.get("personalBest", "")
+    momentum = payload.analytics.get("momentum")
+    feature_label = payload.feature.replace("_", " ")
+
+    parts: list[str] = []
+    parts.append(f"{name} competes in {discipline}.")
+
+    if personal_best:
+        parts.append(f"Their personal best of {personal_best} places them in the competitive reference window for elite-level comparison.")
+
+    if momentum is not None:
+        if momentum >= 70:
+            parts.append("Current momentum signals a strong recent performance trajectory based on verified competition results.")
+        elif momentum >= 40:
+            parts.append("Recent performance data shows moderate competitive consistency across their results window.")
+        else:
+            parts.append("Performance data reflects an early-season or rebuilding trend within their competition tier.")
+
+    parts.append(
+        f"This {feature_label} signal is grounded in deterministic analytics with confidence adjusted to available source coverage."
     )
+
+    if not payload.sources:
+        parts.append("If source data is incomplete, treat this insight as best-effort context only.")
+
+    text = " ".join(parts)
+    text = _enforce_explain_contract(text)
+
+    fallback_reason = "HF_TOKEN not set" if not _HF_TOKEN else "huggingface_unavailable"
     response = ExplainResponse(text=text, source="deterministic", guardrailed=True)
-    return Envelope(data=response, meta=make_meta(payload.sources or ["Athena Backend"], "medium"))
+    return Envelope(
+        data=response,
+        meta=make_meta(payload.sources or ["Athena Backend"], "medium", fallback_reason),
+    )
 
 
 @app.post("/notifications/queue")
 def queue_notification(payload: NotificationQueueRequest) -> Envelope[NotificationQueueResult]:
     now = datetime.now(timezone.utc)
+    effective_cooldown = max(_COOLDOWN_FLOOR_SECONDS, payload.cooldownSeconds)
 
     deduped = False
     if payload.id in _last_sent:
-        elapsed = now - _last_sent[payload.id]
-        if elapsed < timedelta(seconds=max(0, payload.cooldownSeconds)):
+        elapsed = (now - _last_sent[payload.id]).total_seconds()
+        if elapsed < effective_cooldown:
             deduped = True
 
     if not deduped:
         _queue_store.append(payload)
         _last_sent[payload.id] = now
+        log.info("notification_queued", id=payload.id, type=payload.type, title=payload.title)
+    else:
+        log.info("notification_deduped", id=payload.id, type=payload.type)
 
     result = NotificationQueueResult(
         accepted=True,
         queueId=f"queue_{uuid.uuid4().hex[:10]}",
         deduped=deduped,
     )
-
     return Envelope(data=result, meta=make_meta(["Athena Backend"], "high", None))
+
+
+@app.get("/notifications/queue")
+def drain_notification_queue(limit: int = Query(default=50, ge=1, le=200)) -> Envelope[list[NotificationQueueRequest]]:
+    """Return and clear pending notifications (for a push worker to consume)."""
+    batch = _queue_store[:limit]
+    del _queue_store[:limit]
+    return Envelope(data=batch, meta=make_meta(["Athena Backend"], "high", None))

@@ -39,6 +39,28 @@ class ResultRef(BaseModel):
     meet: str
 
 
+class RecentResult(BaseModel):
+    id: str
+    athleteID: str
+    athleteName: str
+    eventID: str
+    eventName: str
+    placement: int
+    time: str | None = None
+    date: str
+    aiInsight: str | None = None
+
+
+class AthleteFull(BaseModel):
+    id: str
+    name: str
+    country: str
+    discipline: str
+    personalBest: str
+    isFollowing: bool = False
+    recentResults: list[RecentResult] = []
+
+
 class BreakoutScore(BaseModel):
     score: int
     band: Literal["Watchlist", "Emerging", "Breakout", "Breakout Priority"]
