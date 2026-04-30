@@ -81,6 +81,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
         run: |
           terraform apply \
+            -lock-timeout=10m \
             -auto-approve \
             -input=false \
             -var-file=envs/${{ env.TARGET_ENV }}/${{ env.TARGET_ENV }}.tfvars.example
