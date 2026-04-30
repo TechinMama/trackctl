@@ -17,7 +17,14 @@ terraform {
   #   TF_BACKEND_RESOURCE_GROUP  = rg-athena-tfstate
   #   TF_BACKEND_STORAGE_ACCOUNT = satfstateathena
   #   TF_BACKEND_CONTAINER       = tfstate
-  backend "azurerm" {}
+  # CI validate requires required backend arguments to exist in config.
+  # Real values are passed from workflow secrets during terraform init.
+  backend "azurerm" {
+    resource_group_name  = "placeholder"
+    storage_account_name = "placeholder"
+    container_name       = "placeholder"
+    key                  = "placeholder.tfstate"
+  }
 }
 
 provider "azurerm" {
