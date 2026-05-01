@@ -35,7 +35,7 @@ class NotificationService {
     }
 
     private var apiBaseURL: URL? {
-        let raw = UserDefaults.standard.string(forKey: apiBaseURLKey) ?? "http://localhost:8080"
+        let raw = UserDefaults.standard.string(forKey: apiBaseURLKey) ?? "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io"
         return URL(string: raw)
     }
 

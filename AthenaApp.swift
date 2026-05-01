@@ -8,13 +8,7 @@ private enum RuntimeSettingsBootstrap {
 
     static func apply() {
         let defaults = UserDefaults.standard
-        let managed = infoBool("AthenaManagedAPISettings", defaultValue: {
-#if DEBUG
-            false
-#else
-            true
-#endif
-        }())
+        let managed = infoBool("AthenaManagedAPISettings", defaultValue: true)
 
         let liveEnabled = infoBool("AthenaLiveAPIEnabled", defaultValue: true)
         let requireLive = infoBool("AthenaRequireLiveData", defaultValue: true)
