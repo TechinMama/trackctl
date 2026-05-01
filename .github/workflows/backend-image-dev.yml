@@ -87,7 +87,7 @@ jobs:
             --registry-password "$ACR_PASS" \
             --cpu 0.25 --memory 0.5Gi \
             --command "alembic" \
-            --args "upgrade,head" \
+            --args "upgrade" "head" \
             --secrets "database-url=${{ secrets.DATABASE_URL }}" \
             --env-vars "DATABASE_URL=secretref:database-url"
 
@@ -105,7 +105,16 @@ jobs:
             if [ "$STATUS" = "Succeeded" ]; then
               echo "Migrations completed successfully."; break
             elif [ "$STATUS" = "Failed" ]; then
-              echo "Migration job failed."; exit 1
+              echo "Migration job failed. Fetching logs..."
+              EXEC_NAME=$(az containerapp job execution list \
+                --name "$JOB_NAME" --resource-group "$RESOURCE_GROUP" \
+                --query "[-1].name" -o tsv 2>/dev/null || echo "")
+              if [ -n "$EXEC_NAME" ]; then
+                az containerapp job execution logs show \
+                  --name "$JOB_NAME" --resource-group "$RESOURCE_GROUP" \
+                  --execution "$EXEC_NAME" --container "$JOB_NAME" 2>&1 || true
+              fi
+              exit 1
             fi
             sleep 5
           done
