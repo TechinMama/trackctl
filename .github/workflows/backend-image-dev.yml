@@ -77,6 +77,7 @@ jobs:
             --environment "$MANAGED_ENV" \
             --trigger-type Manual \
             --replica-timeout 120 \
+            --replica-retry-limit 0 \
             --image "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}" \
             --registry-server "${ACR_NAME}.azurecr.io" \
             --cpu 0.25 --memory 0.5Gi \
