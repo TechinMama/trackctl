@@ -65,6 +65,9 @@ jobs:
           JOB_NAME: athena-migrate-dev
           MANAGED_ENV: cae-athena-dev
         run: |
+          ACR_USER=$(az acr credential show --name "$ACR_NAME" --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
+
           # Delete previous job if it exists (idempotent)
           az containerapp job delete \
             --name "$JOB_NAME" \
@@ -80,6 +83,8 @@ jobs:
             --replica-retry-limit 0 \
             --image "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}" \
             --registry-server "${ACR_NAME}.azurecr.io" \
+            --registry-username "$ACR_USER" \
+            --registry-password "$ACR_PASS" \
             --cpu 0.25 --memory 0.5Gi \
             --command "alembic" \
             --args "upgrade,head" \
