@@ -28,7 +28,9 @@ struct Athlete: Identifiable, Codable {
         case isFollowing = "is_following"
         case recentResults = "recent_results"
     }
+}
 
+extension Athlete {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id            = try c.decode(String.self, forKey: .id)

@@ -349,7 +349,8 @@ actor APIService {
             discipline: athlete.discipline,
             personalBest: athlete.personalBest,
             isFollowing: athlete.isFollowing,
-            recentResults: athlete.recentResults.map(guardrailResult)
+            recentResults: athlete.recentResults.map(guardrailResult),
+            status: athlete.status
         )
     }
 
@@ -698,7 +699,8 @@ private enum MockData {
             discipline: "400m Hurdles",
             personalBest: "50.68 WR",
             isFollowing: false,
-            recentResults: [results[0]]
+            recentResults: [results[0]],
+            status: .active
         ),
         Athlete(
             id: "a2",
@@ -707,7 +709,8 @@ private enum MockData {
             discipline: "100m / 200m",
             personalBest: "9.83 / 19.70",
             isFollowing: false,
-            recentResults: [results[1]]
+            recentResults: [results[1]],
+            status: .active
         ),
         Athlete(
             id: "a3",
@@ -716,7 +719,8 @@ private enum MockData {
             discipline: "1500m",
             personalBest: "3:49.11 WR",
             isFollowing: false,
-            recentResults: [results[2]]
+            recentResults: [results[2]],
+            status: .active
         ),
         Athlete(
             id: "a4",
@@ -725,7 +729,8 @@ private enum MockData {
             discipline: "Pole Vault",
             personalBest: "6.26m WR",
             isFollowing: false,
-            recentResults: [results[3]]
+            recentResults: [results[3]],
+            status: .active
         ),
         Athlete(
             id: "a5",
@@ -734,7 +739,8 @@ private enum MockData {
             discipline: "100m / 200m",
             personalBest: "10.71 / 21.60",
             isFollowing: false,
-            recentResults: [results[4]]
+            recentResults: [results[4]],
+            status: .active
         ),
         Athlete(
             id: "a6",
@@ -743,7 +749,8 @@ private enum MockData {
             discipline: "100m",
             personalBest: "9.80",
             isFollowing: false,
-            recentResults: []
+            recentResults: [],
+            status: .active
         ),
         Athlete(
             id: "a7",
@@ -752,7 +759,8 @@ private enum MockData {
             discipline: "800m",
             personalBest: "1:55.04",
             isFollowing: false,
-            recentResults: []
+            recentResults: [],
+            status: .active
         ),
         Athlete(
             id: "a8",
@@ -761,7 +769,8 @@ private enum MockData {
             discipline: "1500m / 5000m",
             personalBest: "3:43.73 / 12:48.45",
             isFollowing: false,
-            recentResults: []
+            recentResults: [],
+            status: .active
         )
     ]
 
