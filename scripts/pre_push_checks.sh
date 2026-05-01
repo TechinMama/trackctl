@@ -40,11 +40,23 @@ fi
 if [ "$run_terraform" = true ]; then
   echo "[Terraform] Running fmt + validate"
   pushd infra/terraform >/dev/null
-  terraform fmt -check -recursive
-  terraform init -backend=false -input=false >/tmp/athena_prepush_tf_init.log
-  terraform validate
+
+  # Avoid failing pushes when a stale TFENV_CONFIG_DIR points to a missing version file.
+  if [ -n "${TFENV_CONFIG_DIR:-}" ] && [ ! -f "${TFENV_CONFIG_DIR}/version" ]; then
+    echo "[Terraform] TFENV_CONFIG_DIR points to missing version file. Unsetting for this check run."
+    unset TFENV_CONFIG_DIR
+  fi
+
+  if terraform version >/dev/null 2>&1; then
+    terraform fmt -check -recursive
+    terraform init -backend=false -input=false >/tmp/athena_prepush_tf_init.log
+    terraform validate
+  else
+    echo "[Terraform] terraform CLI is not currently runnable on this machine; skipping local terraform checks."
+  fi
+
   popd >/dev/null
-  echo "[Terraform] Checks passed"
+  echo "[Terraform] Checks completed"
 fi
 
 if [ "$run_backend" = true ]; then
