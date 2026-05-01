@@ -20,7 +20,7 @@ struct Athlete: Identifiable, Codable {
     let personalBest: String
     var isFollowing: Bool
     let recentResults: [Result]
-    var status: AthleteStatus
+    var status: AthleteStatus = .active
 
     enum CodingKeys: String, CodingKey {
         case id, name, country, discipline, status

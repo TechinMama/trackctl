@@ -13,14 +13,12 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-import uuid
-from datetime import UTC, datetime
 
 # Allow running from repo root or backend/ directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.database import SessionLocal  # noqa: E402
-from app.orm import AthleteRow, MeetRow, ResultRow  # noqa: E402
+from app.orm import AthleteRow, MeetRow  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Seed data — expand this roster as needed before production launch.
@@ -271,7 +269,6 @@ async def seed() -> None:
         sys.exit(1)
 
     async with SessionLocal() as session:
-        from sqlalchemy import select
 
         # Athletes
         for data in _ATHLETES:
