@@ -76,8 +76,8 @@ actor APIService {
 
     init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 12
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
         session = URLSession(configuration: config)
 
         decoder = JSONDecoder()
