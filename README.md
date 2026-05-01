@@ -1,12 +1,14 @@
-# Athena
+# Athena Performance Insights
 
 **Strategic intelligence for elite performance.**
 
-Athena is an iOS app that blends sports data, AI-powered insights, and competition awareness into a lightweight companion for athletes, fans, and analysts, starting with track and field and designed to scale across sports.
+Athena Performance Insights is an iOS app that blends sports data, AI-powered insights, and competition awareness into a lightweight companion for athletes, fans, and analysts, starting with track and field and designed to scale across sports.
+
+The product name used throughout the codebase and internal tooling is **Athena**. The full consumer-facing name is **Athena Performance Insights**.
 
 ---
 
-## Why Athena
+## Why Athena Performance Insights
 Sports data is abundant, but understanding is not. Athena focuses on **interpretation, awareness, and strategic context**—helping users understand not just what happened, but why it matters.
 
 Athena is designed as a living track and field companion: what happened, what is happening, and what to watch next.
@@ -26,22 +28,34 @@ Built with SwiftUI and MVVM for a clean, maintainable iOS codebase.
 ---
 
 ## Tech Stack
-- **Language:** Swift  
-- **UI:** SwiftUI  
-- **Architecture:** MVVM (lightweight)  
+- **Language:** Swift
+- **UI:** SwiftUI
+- **Architecture:** MVVM (lightweight)
 - **AI:** Hugging Face hosted models
 - **Minimum iOS:** 17.0
 - **Concurrency:** async/await
+- **Backend:** FastAPI + Uvicorn, containerized in Docker
+- **Cloud:** Azure Container Apps, ACR, PostgreSQL, Key Vault, Service Bus, App Insights
+- **Infrastructure:** Terraform (>=1.7, AzureRM provider), remote state in Azure Blob
+- **Observability:** Sentry (iOS crash reporting), Azure Application Insights (backend)
+- **CI/CD:** GitHub Actions (iOS CI, backend CI, Terraform CI/apply, TestFlight release)
 
 ---
 
 ## API Integration
-Athena can run in local-first mode or with a live backend. Core service endpoints:
+Athena connects to a live Azure-hosted FastAPI backend. Local fallback mode is disabled by default — all builds use the live endpoint.
 
-- `/athletes`
-- `/meets`
-- `/events/{eventID}/results`
-- `/storylines`
+**Live backend URL:** `https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io`
+
+Core service endpoints:
+
+- `GET /health`
+- `GET /athletes`
+- `GET /meets`
+- `GET /events/{eventID}/results`
+- `GET /storylines`
+
+Runtime API configuration is controlled via `ATHENA_MANAGED_API_SETTINGS=YES` in build settings. All builds default to live API. URL construction uses `URLComponents` to correctly split path and query string parameters.
 
 Analytics and insight contracts are documented in the architecture specification.
 
@@ -76,6 +90,37 @@ swift test
 xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS Simulator,name=iPhone 16' build CODE_SIGNING_ALLOWED=NO
 ```
 
+---
+
+## Engineering Status (as of May 2026)
+
+### Completed
+- Live Azure backend deployed and healthy (`/health` returns `{"status":"ok"}`)
+- All localhost fallbacks removed — live endpoint used by default in all build configs
+- URL construction rebuilt using `URLComponents` to prevent query string encoding as path segments
+- `ATHENA_MANAGED_API_SETTINGS=YES` active in both Debug and Release
+- Tolerant Swift model decoders added for `Meet` and `CompetitiveStoryline` (handles slim API payloads gracefully)
+- Sentry SDK guarded — only activates when `SentryDSN` is non-empty; no fatal log noise when disabled
+- Pre-push enforcement active via `.githooks/pre-push` → `scripts/pre_push_checks.sh`
+  - Runs iOS build check, Terraform fmt/validate, backend pytest on changed files
+- Engineering rules documented in `rules.md`
+- All GitHub Actions secrets configured for TestFlight release workflow
+- TestFlight release workflow (`release-testflight.yml`) ready to run
+
+### In Progress
+- TestFlight beta testing (internal)
+- Monitoring Sentry + App Insights for real-user sessions
+- AI backend integration (Hugging Face explanation layer)
+
+### Next
+- Ranking Impact Simulator
+- Rivalry Heat Index
+- Record Threat / Milestone Watch
+- Breakout Radar (high school + college athletes)
+- Source coverage expansion: MileSplit + Athletic.net
+
+---
+
 ## Release and Deployment Plan
 
 Athena uses a two-workflow release model:
@@ -97,16 +142,19 @@ Recommended versioning:
 2. Let CI set `CURRENT_PROJECT_VERSION` automatically per run.
 3. Cut a release tag (`v1.0.0`, `v1.0.1`) for each production candidate.
 
-Required GitHub secrets for release workflow:
+Required GitHub secrets for release workflow (all configured):
 
-- `SIGNING_CERT_BASE64`
-- `SIGNING_CERT_PASSWORD`
-- `KEYCHAIN_PASSWORD`
-- `PROVISIONING_PROFILE_BASE64`
-- `APPSTORE_API_KEY_ID`
-- `APPSTORE_API_ISSUER_ID`
-- `APPSTORE_API_PRIVATE_KEY`
-- `ATHENA_API_BASE_URL` (must be `https://...` and point to your deployed backend)
+| Secret | Purpose |
+|---|---|
+| `SIGNING_CERT_BASE64` | Distribution certificate (.p12, base64-encoded) |
+| `SIGNING_CERT_PASSWORD` | Password used when exporting the .p12 |
+| `KEYCHAIN_PASSWORD` | Temp keychain password for CI runner |
+| `PROVISIONING_PROFILE_BASE64` | Provisioning profile (.mobileprovision, base64-encoded) |
+| `APPSTORE_API_KEY_ID` | App Store Connect API key ID (App Manager role) |
+| `APPSTORE_API_ISSUER_ID` | App Store Connect issuer ID |
+| `APPSTORE_API_PRIVATE_KEY` | App Store Connect .p8 private key (full text, not base64) |
+| `ATHENA_API_BASE_URL` | Live backend URL (must be `https://...`) |
+| `SENTRY_DSN` | Sentry DSN for crash reporting (leave empty to disable) |
 
 Notes for `ATHENA_API_BASE_URL`:
 
