@@ -176,8 +176,15 @@ _ATHLETE_POOL: list[AthleteFull] = [
         id="a1",
         name="Sydney McLaughlin-Levrone",
         country="USA",
+        countryName="United States of America",
         discipline="400m Hurdles",
         personalBest="50.65",
+        personalBestsJson={"400mh": "50.65", "400m": "49.53"},
+        yearOfBirth=1999,
+        waAthleteId="14567815",
+        olympicGold=4, olympicSilver=0, olympicBronze=0,
+        olympicGamesCount=3,
+        firstOlympicGames="Rio 2016",
         recentResults=[
             RecentResult(
                 id="r1",
@@ -195,8 +202,15 @@ _ATHLETE_POOL: list[AthleteFull] = [
         id="a2",
         name="Noah Lyles",
         country="USA",
-        discipline="100m / 200m",
+        countryName="United States of America",
+        discipline="100m",
         personalBest="9.79",
+        personalBestsJson={"100m": "9.79", "200m": "19.31", "60m": "6.45"},
+        yearOfBirth=1997,
+        waAthleteId="14807781",
+        olympicGold=1, olympicSilver=0, olympicBronze=2,
+        olympicGamesCount=2,
+        firstOlympicGames="Tokyo 2020",
         recentResults=[
             RecentResult(
                 id="r2",
@@ -214,8 +228,15 @@ _ATHLETE_POOL: list[AthleteFull] = [
         id="a3",
         name="Mondo Duplantis",
         country="SWE",
+        countryName="Sweden",
         discipline="Pole Vault",
-        personalBest="6.25m",
+        personalBest="6.26m",
+        personalBestsJson={"pole_vault": "6.26m"},
+        yearOfBirth=1999,
+        waAthleteId="14474008",
+        olympicGold=2, olympicSilver=0, olympicBronze=0,
+        olympicGamesCount=2,
+        firstOlympicGames="Tokyo 2020",
         recentResults=[
             RecentResult(
                 id="r3",
@@ -232,8 +253,15 @@ _ATHLETE_POOL: list[AthleteFull] = [
         id="a4",
         name="Faith Kipyegon",
         country="KEN",
+        countryName="Kenya",
         discipline="1500m",
         personalBest="3:49.11",
+        personalBestsJson={"1500m": "3:49.11", "mile": "4:07.64", "5000m": "14:05.20"},
+        yearOfBirth=1994,
+        waAthleteId="14310847",
+        olympicGold=3, olympicSilver=1, olympicBronze=0,
+        olympicGamesCount=3,
+        firstOlympicGames="Rio 2016",
         recentResults=[
             RecentResult(
                 id="r4",
@@ -250,8 +278,15 @@ _ATHLETE_POOL: list[AthleteFull] = [
         id="a5",
         name="Marcell Jacobs",
         country="ITA",
+        countryName="Italy",
         discipline="100m",
         personalBest="9.80",
+        personalBestsJson={"100m": "9.80", "60m": "6.41"},
+        yearOfBirth=1994,
+        waAthleteId="14474243",
+        olympicGold=2, olympicSilver=0, olympicBronze=0,
+        olympicGamesCount=1,
+        firstOlympicGames="Tokyo 2020",
         recentResults=[
             RecentResult(
                 id="r5",
@@ -302,7 +337,8 @@ async def athletes(
             stmt = stmt.where(
                 or_(
                     AthleteRow.name.ilike(ql),
-                    AthleteRow.country.ilike(ql),
+                    AthleteRow.country_code.ilike(ql),
+                    AthleteRow.country_name.ilike(ql),
                     AthleteRow.discipline.ilike(ql),
                 )
             )
@@ -314,9 +350,20 @@ async def athletes(
             AthleteFull(
                 id=row.id,
                 name=row.name,
-                country=row.country,
+                country=row.country_code,
+                countryName=row.country_name or "",
                 discipline=row.discipline,
                 personalBest=row.personal_best,
+                personalBestsJson=row.personal_bests_json,
+                yearOfBirth=row.year_of_birth,
+                waAthleteId=row.wa_athlete_id,
+                olympicGold=row.olympic_gold or 0,
+                olympicSilver=row.olympic_silver or 0,
+                olympicBronze=row.olympic_bronze or 0,
+                olympicGamesCount=row.olympic_games_count or 0,
+                firstOlympicGames=row.first_olympic_games,
+                profileImageUrl=row.profile_image_url,
+                biography=row.biography,
                 status=row.status,  # type: ignore[arg-type]
                 isFollowing=False,
                 recentResults=[],

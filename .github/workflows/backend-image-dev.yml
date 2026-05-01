@@ -48,3 +48,23 @@ jobs:
       - name: Show image reference
         run: |
           echo "Image pushed: ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Deploy to Container App
+        env:
+          CONTAINER_APP_NAME: ca-athena-dev-backend
+          RESOURCE_GROUP: rg-athena-dev
+        run: |
+          az containerapp update \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Run Alembic migrations
+        env:
+          CONTAINER_APP_NAME: ca-athena-dev-backend
+          RESOURCE_GROUP: rg-athena-dev
+        run: |
+          az containerapp exec \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --command "alembic upgrade head"

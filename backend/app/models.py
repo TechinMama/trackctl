@@ -109,10 +109,22 @@ class RecentResult(BaseModel):
 class AthleteFull(BaseModel):
     id: str
     name: str
-    country: str
+    # 3-letter NOC code for flags/filtering; countryName for display
+    country: str                        # kept as-is for iOS compatibility (maps to country_code)
+    countryName: str = ""
     discipline: str
     personalBest: str
+    personalBestsJson: dict | None = None
     status: AthleteStatus = "active"
+    yearOfBirth: int | None = None
+    waAthleteId: str | None = None
+    olympicGold: int = 0
+    olympicSilver: int = 0
+    olympicBronze: int = 0
+    olympicGamesCount: int = 0
+    firstOlympicGames: str | None = None
+    profileImageUrl: str | None = None
+    biography: str | None = None
     isFollowing: bool = False
     recentResults: list[RecentResult] = []
 
