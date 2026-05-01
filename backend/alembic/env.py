@@ -2,14 +2,15 @@ import os
 import sys
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # Ensure backend/app is importable from here (backend/ is the cwd when alembic runs)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database import Base  # noqa: E402
 from app import orm  # noqa: E402, F401  # registers all ORM models with Base
+from app.database import Base  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
