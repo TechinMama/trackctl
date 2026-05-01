@@ -4,9 +4,13 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from .database import DB_AVAILABLE, get_db
 from .logging_config import RequestLoggingMiddleware, configure_logging, log
+from .orm import AthleteRow, MeetRow
 from .models import (
     AthleteFull,
     AthleteRef,
@@ -276,7 +280,7 @@ def _is_runner(athlete: AthleteFull) -> bool:
 
 
 @app.get("/athletes")
-def athletes(
+async def athletes(
     q: str | None = Query(default=None, description="Search by name, country, or discipline"),
     active_only: bool = Query(
         default=False, description="Return only athletes with results in last 365 days"
@@ -285,23 +289,55 @@ def athletes(
         default=False, description="Return only running-discipline athletes"
     ),
     limit: int = Query(default=200, ge=1, le=500),
+    db: AsyncSession | None = Depends(get_db),
 ) -> Envelope[list[AthleteFull]]:
+    if DB_AVAILABLE and db is not None:
+        stmt = select(AthleteRow)
+        if active_only:
+            stmt = stmt.where(AthleteRow.status == "active")
+        if q:
+            from sqlalchemy import or_
+
+            ql = f"%{q.lower()}%"
+            stmt = stmt.where(
+                or_(
+                    AthleteRow.name.ilike(ql),
+                    AthleteRow.country.ilike(ql),
+                    AthleteRow.discipline.ilike(ql),
+                )
+            )
+        if runners_only:
+            stmt = stmt.where(AthleteRow.status != "archived")
+        stmt = stmt.limit(limit)
+        rows = (await db.execute(stmt)).scalars().all()
+        pool = [
+            AthleteFull(
+                id=row.id,
+                name=row.name,
+                country=row.country,
+                discipline=row.discipline,
+                personalBest=row.personal_best,
+                status=row.status,  # type: ignore[arg-type]
+                isFollowing=False,
+                recentResults=[],
+            )
+            for row in rows
+        ]
+        return Envelope(data=pool, meta=make_meta(["Athena DB", "World Athletics"], "high"))
+
+    # --- stub fallback (no DATABASE_URL configured) ---
     from datetime import timedelta
 
     cutoff = datetime.now(UTC) - timedelta(days=365)
-
     pool = _ATHLETE_POOL
 
     if runners_only:
         pool = [a for a in pool if _is_runner(a)]
 
     if active_only:
-
         def _has_recent(a: AthleteFull) -> bool:
             if not a.recentResults:
                 return False
-            from datetime import datetime
-
             dates = []
             for r in a.recentResults:
                 try:
@@ -325,7 +361,18 @@ def athletes(
 
 
 @app.get("/meets")
-def meets() -> Envelope[list[dict[str, str]]]:
+async def meets(
+    db: AsyncSession | None = Depends(get_db),
+) -> Envelope[list[dict[str, str]]]:
+    if DB_AVAILABLE and db is not None:
+        rows = (await db.execute(select(MeetRow).order_by(MeetRow.date.desc()))).scalars().all()
+        data = [
+            {"id": row.id, "name": row.name, "location": row.location, "series": row.series or ""}
+            for row in rows
+        ]
+        return Envelope(data=data, meta=make_meta(["Athena DB", "World Athletics"], "high"))
+
+    # --- stub fallback ---
     data = [
         {"id": "m1", "name": "Doha Diamond League", "location": "Doha"},
         {"id": "m2", "name": "Prefontaine Classic", "location": "Eugene"},
