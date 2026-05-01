@@ -15,14 +15,18 @@ _DATABASE_URL: str | None = os.environ.get("DATABASE_URL")
 if _DATABASE_URL and _DATABASE_URL.startswith("postgresql://"):
     _DATABASE_URL = _DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-engine = create_async_engine(
-    _DATABASE_URL or "sqlite+aiosqlite:///./athena_dev.db",
-    echo=False,
-    pool_pre_ping=True,
-    # Reduce connection churn on Container Apps where connections are expensive.
-    pool_size=5,
-    max_overflow=10,
-) if _DATABASE_URL else None  # type: ignore[assignment]
+engine = (
+    create_async_engine(
+        _DATABASE_URL or "sqlite+aiosqlite:///./athena_dev.db",
+        echo=False,
+        pool_pre_ping=True,
+        # Reduce connection churn on Container Apps where connections are expensive.
+        pool_size=5,
+        max_overflow=10,
+    )
+    if _DATABASE_URL
+    else None
+)  # type: ignore[assignment]
 
 SessionLocal: async_sessionmaker[AsyncSession] | None = (
     async_sessionmaker(engine, expire_on_commit=False) if engine else None

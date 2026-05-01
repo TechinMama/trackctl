@@ -8,6 +8,7 @@ Or via Docker:
 
     docker exec -it <container> python -m scripts.seed_athletes
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -37,7 +38,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 1999,
         "wa_athlete_id": "14567815",
-        "olympic_gold": 4, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 4,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 3,
         "first_olympic_games": "Rio 2016",
         "biography": (
@@ -58,7 +61,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 1997,
         "wa_athlete_id": "14807781",
-        "olympic_gold": 1, "olympic_silver": 0, "olympic_bronze": 2,
+        "olympic_gold": 1,
+        "olympic_silver": 0,
+        "olympic_bronze": 2,
         "olympic_games_count": 2,
         "first_olympic_games": "Tokyo 2020",
         "biography": (
@@ -79,7 +84,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 1999,
         "wa_athlete_id": "14474008",
-        "olympic_gold": 2, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 2,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 2,
         "first_olympic_games": "Tokyo 2020",
         "biography": (
@@ -100,7 +107,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 1994,
         "wa_athlete_id": "14310847",
-        "olympic_gold": 3, "olympic_silver": 1, "olympic_bronze": 0,
+        "olympic_gold": 3,
+        "olympic_silver": 1,
+        "olympic_bronze": 0,
         "olympic_games_count": 3,
         "first_olympic_games": "Rio 2016",
         "biography": (
@@ -121,7 +130,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 1994,
         "wa_athlete_id": "14474243",
-        "olympic_gold": 2, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 2,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 1,
         "first_olympic_games": "Tokyo 2020",
         "biography": (
@@ -142,7 +153,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 2002,
         "wa_athlete_id": "14948826",
-        "olympic_gold": 1, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 1,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 1,
         "first_olympic_games": "Tokyo 2020",
         "biography": (
@@ -163,7 +176,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 2000,
         "wa_athlete_id": "15014879",
-        "olympic_gold": 1, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 1,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 1,
         "first_olympic_games": "Paris 2024",
         "biography": (
@@ -180,14 +195,18 @@ _ATHLETES: list[dict] = [
         "discipline": "1500m / 5000m",
         "personal_best": "3:43.73",
         "personal_bests_json": {
-            "1500m": "3:43.73", "mile": "3:43.73",
-            "3000m": "7:17.55", "5000m": "12:48.45",
+            "1500m": "3:43.73",
+            "mile": "3:43.73",
+            "3000m": "7:17.55",
+            "5000m": "12:48.45",
         },
         "tier": "professional",
         "status": "active",
         "year_of_birth": 2000,
         "wa_athlete_id": "14748541",
-        "olympic_gold": 1, "olympic_silver": 1, "olympic_bronze": 0,
+        "olympic_gold": 1,
+        "olympic_silver": 1,
+        "olympic_bronze": 0,
         "olympic_games_count": 2,
         "first_olympic_games": "Tokyo 2020",
         "biography": (
@@ -208,7 +227,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 1997,
         "wa_athlete_id": "14564088",
-        "olympic_gold": 0, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 0,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 2,
         "first_olympic_games": "Tokyo 2020",
         "biography": (
@@ -229,7 +250,9 @@ _ATHLETES: list[dict] = [
         "status": "active",
         "year_of_birth": 2006,
         "wa_athlete_id": "15378421",
-        "olympic_gold": 1, "olympic_silver": 0, "olympic_bronze": 0,
+        "olympic_gold": 1,
+        "olympic_silver": 0,
+        "olympic_bronze": 0,
         "olympic_games_count": 1,
         "first_olympic_games": "Paris 2024",
         "biography": (
@@ -269,7 +292,6 @@ async def seed() -> None:
         sys.exit(1)
 
     async with SessionLocal() as session:
-
         # Athletes
         for data in _ATHLETES:
             existing = await session.get(AthleteRow, data["id"])

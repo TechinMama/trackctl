@@ -182,7 +182,9 @@ _ATHLETE_POOL: list[AthleteFull] = [
         personalBestsJson={"400mh": "50.65", "400m": "49.53"},
         yearOfBirth=1999,
         waAthleteId="14567815",
-        olympicGold=4, olympicSilver=0, olympicBronze=0,
+        olympicGold=4,
+        olympicSilver=0,
+        olympicBronze=0,
         olympicGamesCount=3,
         firstOlympicGames="Rio 2016",
         recentResults=[
@@ -208,7 +210,9 @@ _ATHLETE_POOL: list[AthleteFull] = [
         personalBestsJson={"100m": "9.79", "200m": "19.31", "60m": "6.45"},
         yearOfBirth=1997,
         waAthleteId="14807781",
-        olympicGold=1, olympicSilver=0, olympicBronze=2,
+        olympicGold=1,
+        olympicSilver=0,
+        olympicBronze=2,
         olympicGamesCount=2,
         firstOlympicGames="Tokyo 2020",
         recentResults=[
@@ -234,7 +238,9 @@ _ATHLETE_POOL: list[AthleteFull] = [
         personalBestsJson={"pole_vault": "6.26m"},
         yearOfBirth=1999,
         waAthleteId="14474008",
-        olympicGold=2, olympicSilver=0, olympicBronze=0,
+        olympicGold=2,
+        olympicSilver=0,
+        olympicBronze=0,
         olympicGamesCount=2,
         firstOlympicGames="Tokyo 2020",
         recentResults=[
@@ -259,7 +265,9 @@ _ATHLETE_POOL: list[AthleteFull] = [
         personalBestsJson={"1500m": "3:49.11", "mile": "4:07.64", "5000m": "14:05.20"},
         yearOfBirth=1994,
         waAthleteId="14310847",
-        olympicGold=3, olympicSilver=1, olympicBronze=0,
+        olympicGold=3,
+        olympicSilver=1,
+        olympicBronze=0,
         olympicGamesCount=3,
         firstOlympicGames="Rio 2016",
         recentResults=[
@@ -284,7 +292,9 @@ _ATHLETE_POOL: list[AthleteFull] = [
         personalBestsJson={"100m": "9.80", "60m": "6.41"},
         yearOfBirth=1994,
         waAthleteId="14474243",
-        olympicGold=2, olympicSilver=0, olympicBronze=0,
+        olympicGold=2,
+        olympicSilver=0,
+        olympicBronze=0,
         olympicGamesCount=1,
         firstOlympicGames="Tokyo 2020",
         recentResults=[
@@ -382,6 +392,7 @@ async def athletes(
         pool = [a for a in pool if _is_runner(a)]
 
     if active_only:
+
         def _has_recent(a: AthleteFull) -> bool:
             if not a.recentResults:
                 return False

@@ -6,6 +6,7 @@ Create Date: 2026-05-01
 
 Schema designed from real athlete profiles on Olympics.com and worldathletics.org.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa
@@ -101,8 +102,8 @@ def upgrade() -> None:
         # Round: heat | semi-final | final | qualifying
         sa.Column("round", sa.String(16), nullable=False, server_default="final"),
         sa.Column("placement", sa.Integer, nullable=True),
-        sa.Column("mark", sa.String(32), nullable=True),      # time or distance
-        sa.Column("wind", sa.String(8), nullable=True),        # e.g. "+1.2"
+        sa.Column("mark", sa.String(32), nullable=True),  # time or distance
+        sa.Column("wind", sa.String(8), nullable=True),  # e.g. "+1.2"
         sa.Column("reaction_time", sa.String(8), nullable=True),
         sa.Column("is_personal_best", sa.Boolean, nullable=False, server_default="false"),
         sa.Column("is_world_record", sa.Boolean, nullable=False, server_default="false"),
