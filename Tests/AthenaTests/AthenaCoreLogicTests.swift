@@ -105,10 +105,12 @@ final class AthenaCoreLogicTests: XCTestCase {
         let storylineResponse = await APIService.shared.fetchCompetitiveStorylines()
         let resultResponse = await APIService.shared.fetchResults(eventID: "e1")
 
-        XCTAssertFalse(storylineResponse.value.isEmpty)
+        XCTAssertFalse(storylineResponse.value.isEmpty, "Storylines should not be empty")
+        guard !storylineResponse.value.isEmpty else { return }
         XCTAssertEqual(storylineResponse.value[0].aiGeneratedInsight, "Insight unavailable pending guardrail review.")
 
-        XCTAssertFalse(resultResponse.value.isEmpty)
+        XCTAssertFalse(resultResponse.value.isEmpty, "Results should not be empty")
+        guard !resultResponse.value.isEmpty else { return }
         XCTAssertNil(resultResponse.value[0].aiInsight)
     }
 
