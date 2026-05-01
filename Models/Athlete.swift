@@ -1,11 +1,11 @@
 import Foundation
 
 enum AthleteStatus: String, Codable, CaseIterable {
-    case active   = "active"
-    case injured  = "injured"
-    case inactive = "inactive"
-    case retired  = "retired"
-    case archived = "archived"
+    case active
+    case injured
+    case inactive
+    case retired
+    case archived
 
     var isVisible: Bool {
         self != .archived
@@ -32,14 +32,14 @@ struct Athlete: Identifiable, Codable {
 
 extension Athlete {
     init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        id            = try c.decode(String.self, forKey: .id)
-        name          = try c.decode(String.self, forKey: .name)
-        country       = try c.decodeIfPresent(String.self, forKey: .country) ?? ""
-        discipline    = try c.decodeIfPresent(String.self, forKey: .discipline) ?? ""
-        personalBest  = try c.decodeIfPresent(String.self, forKey: .personalBest) ?? ""
-        isFollowing   = try c.decodeIfPresent(Bool.self, forKey: .isFollowing) ?? false
-        recentResults = try c.decodeIfPresent([Result].self, forKey: .recentResults) ?? []
-        status        = try c.decodeIfPresent(AthleteStatus.self, forKey: .status) ?? .active
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id            = try container.decode(String.self, forKey: .id)
+        name          = try container.decode(String.self, forKey: .name)
+        country       = try container.decodeIfPresent(String.self, forKey: .country) ?? ""
+        discipline    = try container.decodeIfPresent(String.self, forKey: .discipline) ?? ""
+        personalBest  = try container.decodeIfPresent(String.self, forKey: .personalBest) ?? ""
+        isFollowing   = try container.decodeIfPresent(Bool.self, forKey: .isFollowing) ?? false
+        recentResults = try container.decodeIfPresent([Result].self, forKey: .recentResults) ?? []
+        status        = try container.decodeIfPresent(AthleteStatus.self, forKey: .status) ?? .active
     }
 }

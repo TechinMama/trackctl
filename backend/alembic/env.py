@@ -1,12 +1,9 @@
-from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 import os
 import sys
+from logging.config import fileConfig
 
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # Ensure backend/app is importable from here (backend/ is the cwd when alembic runs)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -28,8 +25,9 @@ target_metadata = Base.metadata
 # Allow DATABASE_URL env var to override alembic.ini sqlalchemy.url.
 _db_url = os.environ.get("DATABASE_URL", "")
 if _db_url.startswith("postgresql+asyncpg://"):
-    # Alembic sync runner needs the psycopg2 URL, not asyncpg
+    # Alembic sync runner needs psycopg2 URL — swap driver and ssl param
     _db_url = _db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+    _db_url = _db_url.replace("?ssl=require", "?sslmode=require", 1)
 if _db_url:
     config.set_main_option("sqlalchemy.url", _db_url)
 
