@@ -61,10 +61,45 @@ jobs:
 
       - name: Run Alembic migrations
         env:
-          CONTAINER_APP_NAME: ca-athena-dev-backend
           RESOURCE_GROUP: rg-athena-dev
+          JOB_NAME: athena-migrate-dev
+          MANAGED_ENV: cae-athena-dev
         run: |
-          az containerapp exec \
-            --name "$CONTAINER_APP_NAME" \
+          # Delete previous job if it exists (idempotent)
+          az containerapp job delete \
+            --name "$JOB_NAME" \
             --resource-group "$RESOURCE_GROUP" \
-            --command "alembic upgrade head"
+            --yes 2>/dev/null || true
+
+          az containerapp job create \
+            --name "$JOB_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --environment "$MANAGED_ENV" \
+            --trigger-type Manual \
+            --replica-timeout 120 \
+            --image "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}" \
+            --registry-server "${ACR_NAME}.azurecr.io" \
+            --cpu 0.25 --memory 0.5Gi \
+            --command "alembic" \
+            --args "upgrade,head" \
+            --secrets "database-url=${{ secrets.DATABASE_URL }}" \
+            --env-vars "DATABASE_URL=secretref:database-url"
+
+          az containerapp job start \
+            --name "$JOB_NAME" \
+            --resource-group "$RESOURCE_GROUP"
+
+          # Poll until job execution completes (max ~2 min)
+          for i in $(seq 1 24); do
+            STATUS=$(az containerapp job execution list \
+              --name "$JOB_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "[-1].properties.status" -o tsv 2>/dev/null || echo "Unknown")
+            echo "Migration job status: $STATUS"
+            if [ "$STATUS" = "Succeeded" ]; then
+              echo "Migrations completed successfully."; break
+            elif [ "$STATUS" = "Failed" ]; then
+              echo "Migration job failed."; exit 1
+            fi
+            sleep 5
+          done
