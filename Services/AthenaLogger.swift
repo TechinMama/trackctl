@@ -17,6 +17,7 @@ final class AthenaLogger: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.athena.logger", qos: .utility)
     private let maxFileSizeBytes = 512 * 1024   // 512 KB rolling limit
     private let logFileName = "athena-events.jsonl"
+    private let sentryEnabled: Bool
 
     private var logFileURL: URL? {
         FileManager.default
@@ -25,7 +26,11 @@ final class AthenaLogger: @unchecked Sendable {
             .appendingPathComponent(logFileName)
     }
 
-    private init() {}
+    private init() {
+        let dsn = (Bundle.main.object(forInfoDictionaryKey: "SentryDSN") as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        sentryEnabled = !dsn.isEmpty
+    }
 
     // MARK: - Public API
 
@@ -35,6 +40,7 @@ final class AthenaLogger: @unchecked Sendable {
 
     func warning(_ name: String, props: [String: Any] = [:]) {
         write(level: .warning, name: name, props: props)
+        guard sentryEnabled else { return }
         let crumb = Breadcrumb(level: .warning, category: "athena")
         crumb.message = name
         crumb.data = props.mapValues { "\($0)" }
@@ -45,6 +51,7 @@ final class AthenaLogger: @unchecked Sendable {
         var merged = props
         if let error { merged["error"] = error.localizedDescription }
         write(level: .error, name: name, props: merged)
+        guard sentryEnabled else { return }
         SentrySDK.capture(message: name) { scope in
             scope.setTag(value: "error", key: "level")
             merged.forEach { scope.setExtra(value: $0.value, key: $0.key) }
