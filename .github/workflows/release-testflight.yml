@@ -54,8 +54,18 @@ jobs:
         run: |
           PP_PATH=$RUNNER_TEMP/athena.mobileprovision
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
+
+          # Extract UUID and name from the profile for use in xcodebuild
+          PP_UUID=$(security cms -D -i "$PP_PATH" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+          PP_NAME=$(security cms -D -i "$PP_PATH" | plutil -extract Name xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+          # Copy with UUID filename — standard Apple convention for profile resolution
+          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"${PP_UUID}.mobileprovision"
+
+          echo "PP_UUID=${PP_UUID}" >> $GITHUB_ENV
+          echo "PP_NAME=${PP_NAME}" >> $GITHUB_ENV
+          echo "Installed profile: ${PP_NAME} (${PP_UUID})"
 
       - name: Archive
         env:
@@ -87,6 +97,10 @@ jobs:
             -archivePath $RUNNER_TEMP/Athena.xcarchive \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=38L5S89U5V \
+            CODE_SIGN_IDENTITY="iPhone Distribution" \
+            PROVISIONING_PROFILE="$PP_UUID" \
+            PROVISIONING_PROFILE_SPECIFIER="$PP_NAME" \
             ATHENA_API_BASE_URL="$ATHENA_API_BASE_URL" \
             ATHENA_LIVE_API_ENABLED=YES \
             ATHENA_REQUIRE_LIVE_DATA=YES \
