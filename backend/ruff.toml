@@ -3,7 +3,7 @@ line-length = 100
 
 [lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4"]
-ignore = ["E501"]   # line length enforced by formatter not linter
+ignore = ["E501", "B008"]   # E501: line length enforced by formatter; B008: FastAPI Depends pattern is intentional
 
 [format]
 quote-style = "double"

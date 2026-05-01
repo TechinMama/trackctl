@@ -14,7 +14,7 @@ enum TrackEventCategory: String, CaseIterable, Codable {
     case hurdles        = "Hurdles"
     case relays         = "Relays"
     case jumps          = "Jumps"
-    case throws         = "Throws"
+    case throwEvents    = "Throws"
     case combinedEvents = "Combined Events"
     case raceWalk       = "Race Walk"
     case roadRunning    = "Road Running"
@@ -95,7 +95,7 @@ enum TrackEvent: String, CaseIterable, Codable, Identifiable {
         case .highJump, .poleVault, .longJump, .tripleJump:
             return .jumps
         case .shotPut, .discus, .hammer, .javelin:
-            return .throws
+            return .throwEvents
         case .heptathlon, .decathlon:
             return .combinedEvents
         case .raceWalk20k, .raceWalk35k:

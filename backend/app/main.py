@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import DB_AVAILABLE, get_db
 from .logging_config import RequestLoggingMiddleware, configure_logging, log
-from .orm import AthleteRow, MeetRow
 from .models import (
+    TRACK_EVENTS,
     AthleteFull,
     AthleteRef,
     BreakoutItem,
@@ -31,8 +31,8 @@ from .models import (
     RivalryAthlete,
     RivalryItem,
     RivalryScore,
-    TRACK_EVENTS,
 )
+from .orm import AthleteRow, MeetRow
 
 app = FastAPI(title="Athena Backend", version="0.1.0")
 configure_logging(json_logs=True)
