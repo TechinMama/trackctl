@@ -27,6 +27,7 @@ from .models import (
     RivalryAthlete,
     RivalryItem,
     RivalryScore,
+    TRACK_EVENTS,
 )
 
 app = FastAPI(title="Athena Backend", version="0.1.0")
@@ -125,6 +126,15 @@ def make_meta(citations: list[str], confidence: str, fallback_reason: str | None
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/events/catalog")
+def events_catalog() -> list[dict]:
+    """Reference list of all official track and field events.
+    Validated against World Athletics disciplines (May 2026).
+    Static — does not change between seasons.
+    """
+    return TRACK_EVENTS
 
 
 _RUNNING_SIGNALS = {
