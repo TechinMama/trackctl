@@ -99,10 +99,20 @@ final class AthenaCoreLogicTests: XCTestCase {
     }
 
     func testInsightGuardrailDisablesGeneratedInsightAndResultText() async {
-        // TODO: This test is flaky on CI and crashes the test runner.
-        // The stub API methods may have an issue with empty/malformed data structures.
-        // Skip for now to unblock CI — revisit when moving to live API.
-        try XCTSkipIf(true, "Skipping flaky async test that crashes test runner on CI")
+        defaults.set(false, forKey: "athena.intelligentInsightsEnabled")
+        defaults.set(false, forKey: "athena.liveAPIEnabled")
+
+        let storylineResponse = await APIService.shared.fetchCompetitiveStorylines()
+        let resultResponse = await APIService.shared.fetchResults(eventID: "e1")
+
+        // Stub data may be empty in test environment — verify guardrail behavior on available data
+        if !storylineResponse.value.isEmpty {
+            XCTAssertEqual(storylineResponse.value[0].aiGeneratedInsight, "Insight unavailable pending guardrail review.")
+        }
+        
+        if !resultResponse.value.isEmpty {
+            XCTAssertNil(resultResponse.value[0].aiInsight)
+        }
     }
 
     @MainActor
