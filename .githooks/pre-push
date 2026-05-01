@@ -1,5 +1,82 @@
 #!/usr/bin/env bash
+# Pre-push quality gate — all checks must pass before push is allowed
 set -euo pipefail
 
-ROOT_DIR="$(git rev-parse --show-toplevel)"
-"$ROOT_DIR/scripts/pre_push_checks.sh" "origin/main"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+PASS=0
+FAIL=0
+
+run_check() {
+  local label="$1"
+  shift
+  echo ""
+  echo "[$label] Starting..."
+  if "$@"; then
+    echo "[$label] PASSED"
+    PASS=$((PASS + 1))
+  else
+    echo "[$label] FAILED"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# ── iOS build ──────────────────────────────────────────────────────────────────
+ios_build() {
+  xcodebuild \
+    -project "$REPO_ROOT/Athena.xcodeproj" \
+    -scheme Athena \
+    -destination 'generic/platform=iOS Simulator' \
+    -configuration Debug \
+    build \
+    CODE_SIGNING_ALLOWED=NO \
+    2>&1 | grep -E '(error:|warning:|BUILD SUCCEEDED|BUILD FAILED)' | tail -20
+  # xcodebuild exits non-zero on BUILD FAILED
+  xcodebuild \
+    -project "$REPO_ROOT/Athena.xcodeproj" \
+    -scheme Athena \
+    -destination 'generic/platform=iOS Simulator' \
+    -configuration Debug \
+    build \
+    CODE_SIGNING_ALLOWED=NO \
+    -quiet
+}
+run_check "iOS" ios_build
+
+# ── Terraform fmt + validate ───────────────────────────────────────────────────
+terraform_check() {
+  terraform -chdir="$REPO_ROOT/infra/terraform" fmt -check -recursive
+  terraform -chdir="$REPO_ROOT/infra/terraform" validate
+}
+run_check "Terraform" terraform_check
+
+# ── Backend tests ──────────────────────────────────────────────────────────────
+backend_tests() {
+  cd "$REPO_ROOT"
+  if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+  fi
+  python -m pytest backend/tests/ -q --tb=short
+}
+run_check "Backend" backend_tests
+
+# ── Alembic migration dry-run ──────────────────────────────────────────────────
+# Validates migration files are importable and heads are consistent.
+# Does NOT require a live database — catches import errors and missing revisions.
+alembic_check() {
+  cd "$REPO_ROOT/backend"
+  if [ -f "../.venv/bin/activate" ]; then
+    source ../.venv/bin/activate
+  fi
+  # 'alembic heads' parses all migration files without connecting to DB
+  alembic heads 2>&1
+}
+run_check "Alembic" alembic_check
+
+# ── Summary ────────────────────────────────────────────────────────────────────
+echo ""
+echo "Pre-push results: $PASS passed, $FAIL failed"
+if [ "$FAIL" -gt 0 ]; then
+  echo "Push blocked. Fix the failures above and try again."
+  exit 1
+fi
+echo "All checks passed. Pushing..."

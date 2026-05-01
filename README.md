@@ -42,6 +42,18 @@ Built with SwiftUI and MVVM for a clean, maintainable iOS codebase.
 
 ---
 
+## Local Setup
+
+After cloning, run this once to activate the pre-push quality gate:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This wires the committed hook at `.githooks/pre-push`, which runs iOS build + Terraform validate + pytest + Alembic migration check before every push. Without this step, nothing catches failures locally.
+
+---
+
 ## API Integration
 Athena connects to a live Azure-hosted FastAPI backend. Local fallback mode is disabled by default — all builds use the live endpoint.
 
