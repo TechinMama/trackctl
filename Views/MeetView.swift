@@ -124,7 +124,7 @@ struct MeetListItemView: View {
                     .font(.caption)
                     .foregroundStyle(AthenaTheme.bone)
                 
-                if let _ = meet.watchURL {
+                     if meet.watchURL != nil {
                     Label("Airing", systemImage: "play.circle.fill")
                         .font(.caption)
                         .foregroundStyle(AthenaTheme.teal)

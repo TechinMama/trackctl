@@ -20,15 +20,15 @@ class AthleteViewModel {
         let base = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? athletes
             : athletes.filter { athlete in
-                let q = searchQuery.lowercased()
-                return athlete.name.lowercased().contains(q)
-                    || athlete.country.lowercased().contains(q)
-                    || athlete.discipline.lowercased().contains(q)
+                    let query = searchQuery.lowercased()
+                    return athlete.name.lowercased().contains(query)
+                        || athlete.country.lowercased().contains(query)
+                        || athlete.discipline.lowercased().contains(query)
             }
         let limit = loadedPageCount * pageSize
         var paged: [Athlete] = []
-        for a in base {
-            paged.append(a)
+            for athlete in base {
+                paged.append(athlete)
             if paged.count == limit { break }
         }
         return paged
@@ -38,10 +38,10 @@ class AthleteViewModel {
         let base = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? athletes
             : athletes.filter { athlete in
-                let q = searchQuery.lowercased()
-                return athlete.name.lowercased().contains(q)
-                    || athlete.country.lowercased().contains(q)
-                    || athlete.discipline.lowercased().contains(q)
+                    let query = searchQuery.lowercased()
+                    return athlete.name.lowercased().contains(query)
+                        || athlete.country.lowercased().contains(query)
+                        || athlete.discipline.lowercased().contains(query)
             }
         return filteredAthletes.count < base.count
     }
@@ -84,14 +84,17 @@ class AthleteViewModel {
         let response = await apiService.fetchAthletes()
         athletes = curatedDirectoryAthletes(from: response.value)
         let saved = followedIDs
-        for i in athletes.indices {
-            athletes[i].isFollowing = saved.contains(athletes[i].id)
+        for index in athletes.indices {
+            athletes[index].isFollowing = saved.contains(athletes[index].id)
         }
         followingAthletes = athletes.filter { $0.isFollowing }
         lastUpdated = response.metadata.fetchedAt
         dataWarning = response.metadata.warning
         if let warning = response.metadata.warning {
             AthenaLogger.shared.warning("athletes_load_warning", props: ["reason": warning])
+        }
+        if athletes.isEmpty {
+            errorMessage = response.metadata.warning ?? "No live athlete data available yet."
         }
         AthenaLogger.shared.event("athletes_loaded", props: ["count": athletes.count])
         isLoading = false
@@ -276,9 +279,9 @@ class AthleteViewModel {
     @MainActor
     func resetFollowingPreferences() {
         followedIDs = []
-        for i in athletes.indices {
-            athletes[i].isFollowing = false
-            NotificationService.shared.setAthleteAlertEnabled(athleteID: athletes[i].id, enabled: false)
+            for index in athletes.indices {
+                athletes[index].isFollowing = false
+                NotificationService.shared.setAthleteAlertEnabled(athleteID: athletes[index].id, enabled: false)
         }
         followingAthletes = []
     }

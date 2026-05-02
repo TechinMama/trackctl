@@ -16,6 +16,38 @@ struct Meet: Identifiable, Codable {
         case watchURL = "watch_url"
         case status
     }
+
+    init(
+        id: String,
+        name: String,
+        location: String,
+        date: Date,
+        events: [Event],
+        competitiveLevel: String,
+        watchURL: URL?,
+        status: MeetStatus
+    ) {
+        self.id = id
+        self.name = name
+        self.location = location
+        self.date = date
+        self.events = events
+        self.competitiveLevel = competitiveLevel
+        self.watchURL = watchURL
+        self.status = status
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        location = try container.decodeIfPresent(String.self, forKey: .location) ?? "TBD"
+        date = try container.decodeIfPresent(Date.self, forKey: .date) ?? Date()
+        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        competitiveLevel = try container.decodeIfPresent(String.self, forKey: .competitiveLevel) ?? ""
+        watchURL = try container.decodeIfPresent(URL.self, forKey: .watchURL)
+        status = try container.decodeIfPresent(MeetStatus.self, forKey: .status) ?? .upcoming
+    }
 }
 
 enum MeetStatus: String, Codable {

@@ -56,7 +56,7 @@ struct InsightResult: Decodable {
     let guardrailed: Bool
 }
 
-// MARK: - Live API service with resilient local fallback.
+// MARK: - Live API service with cached snapshot fallback.
 actor APIService {
     static let shared = APIService()
 
@@ -64,19 +64,20 @@ actor APIService {
     private let decoder: JSONDecoder
     private let baseURLKey = "athena.apiBaseURL"
     private let liveAPIEnabledKey = "athena.liveAPIEnabled"
+    private let requireLiveDataKey = "athena.requireLiveData"
     private let intelligentInsightsEnabledKey = "athena.intelligentInsightsEnabled"
-    private let defaultBaseURL = "http://localhost:8080"
+    private let defaultDebugBaseURL = "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io"
     private let staleInterval: TimeInterval = 15 * 60
     private let cacheFolderName = "athena-api-cache"
 
-    private var athleteCache: [Athlete] = MockData.athletes
-    private var meetCache: [Meet] = MockData.meets
-    private var storylineCache: [CompetitiveStoryline] = MockData.storylines
+    private var athleteCache: [Athlete] = []
+    private var meetCache: [Meet] = []
+    private var storylineCache: [CompetitiveStoryline] = []
 
     init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 12
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
         session = URLSession(configuration: config)
 
         decoder = JSONDecoder()
@@ -95,14 +96,40 @@ actor APIService {
     }
 
     private var liveAPIEnabled: Bool {
+        if managedAPISettings {
+            return infoBool("AthenaLiveAPIEnabled", defaultValue: true)
+        }
         if UserDefaults.standard.object(forKey: liveAPIEnabledKey) == nil {
             return true
         }
         return UserDefaults.standard.bool(forKey: liveAPIEnabledKey)
     }
 
+    private var managedAPISettings: Bool {
+        infoBool("AthenaManagedAPISettings", defaultValue: true)
+    }
+
+    private var configuredBaseURLString: String {
+        let value = (Bundle.main.object(forInfoDictionaryKey: "AthenaAPIBaseURL") as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !value.isEmpty {
+            return value
+        }
+#if DEBUG
+        return defaultDebugBaseURL
+#else
+        return ""
+#endif
+    }
+
     private var baseURL: URL? {
-        let raw = UserDefaults.standard.string(forKey: baseURLKey) ?? defaultBaseURL
+        let raw: String
+        if managedAPISettings {
+            raw = configuredBaseURLString
+        } else {
+            raw = UserDefaults.standard.string(forKey: baseURLKey) ?? configuredBaseURLString
+        }
+        guard !raw.isEmpty else { return nil }
         return URL(string: raw)
     }
 
@@ -113,14 +140,34 @@ actor APIService {
         return UserDefaults.standard.bool(forKey: intelligentInsightsEnabledKey)
     }
 
-    private func localMetadata(now: Date = Date()) -> APIFetchMetadata {
+    private var requireLiveData: Bool {
+        if managedAPISettings {
+            return infoBool("AthenaRequireLiveData", defaultValue: true)
+        }
+        if UserDefaults.standard.object(forKey: requireLiveDataKey) == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: requireLiveDataKey)
+    }
+
+    private func infoBool(_ key: String, defaultValue: Bool) -> Bool {
+        if let value = Bundle.main.object(forInfoDictionaryKey: key) as? Bool {
+            return value
+        }
+        if let value = Bundle.main.object(forInfoDictionaryKey: key) as? String {
+            return ["1", "true", "yes"].contains(value.lowercased())
+        }
+        return defaultValue
+    }
+
+    private func unavailableMetadata(reason: String, now: Date = Date()) -> APIFetchMetadata {
         APIFetchMetadata(
-            source: .local,
+            source: .fallback,
             fetchedAt: now,
             generatedAt: nil,
             staleAfter: now.addingTimeInterval(staleInterval),
-            citations: [NotificationService.sourceCitationText],
-            warning: nil
+            citations: ["Athena Backend"],
+            warning: reason
         )
     }
 
@@ -130,8 +177,8 @@ actor APIService {
             fetchedAt: now,
             generatedAt: nil,
             staleAfter: now.addingTimeInterval(staleInterval),
-            citations: [NotificationService.sourceCitationText],
-            warning: "Live API unavailable; using local fallback data. \(error.localizedDescription)"
+            citations: ["Athena Backend"],
+            warning: "Live API unavailable; using cached snapshot. \(error.localizedDescription)"
         )
     }
 
@@ -178,18 +225,34 @@ actor APIService {
     }
 
     private func requestURL(path: String) -> URL? {
-        baseURL?.appendingPathComponent(path)
+        guard let base = baseURL else { return nil }
+
+        let parts = path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        let rawPath = String(parts[0])
+        let query = parts.count > 1 ? String(parts[1]) : nil
+
+        guard var components = URLComponents(url: base, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+
+        let basePath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let appendedPath = rawPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let joinedPath = [basePath, appendedPath].filter { !$0.isEmpty }.joined(separator: "/")
+        components.path = "/" + joinedPath
+        components.percentEncodedQuery = query
+
+        return components.url
     }
 
     private func cacheDirectoryURL() -> URL? {
-        let fm = FileManager.default
-        guard let cachesRoot = fm.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+        let fileManager = FileManager.default
+        guard let cachesRoot = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
             return nil
         }
         let folder = cachesRoot.appendingPathComponent(cacheFolderName, isDirectory: true)
-        if !fm.fileExists(atPath: folder.path) {
+        if !fileManager.fileExists(atPath: folder.path) {
             do {
-                try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+                try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
             } catch {
                 print("Failed to create API cache directory: \(error.localizedDescription)")
                 return nil
@@ -286,7 +349,8 @@ actor APIService {
             discipline: athlete.discipline,
             personalBest: athlete.personalBest,
             isFollowing: athlete.isFollowing,
-            recentResults: athlete.recentResults.map(guardrailResult)
+            recentResults: athlete.recentResults.map(guardrailResult),
+            status: athlete.status
         )
     }
 
@@ -352,7 +416,7 @@ actor APIService {
         _ type: T.Type,
         path: String,
         cacheKey: String,
-        fallback: () -> T
+        emptyFallback: () -> T
     ) async -> APIResponse<T> {
         if !liveAPIEnabled {
             if let persisted = loadCachedValue(key: cacheKey, as: T.self) {
@@ -366,7 +430,10 @@ actor APIService {
                     )
                 )
             }
-            return APIResponse(value: fallback(), metadata: localMetadata())
+            let warning = requireLiveData
+                ? "Live API is disabled and no cached snapshot is available."
+                : "Live API is disabled. Cached snapshot is unavailable right now."
+            return APIResponse(value: emptyFallback(), metadata: unavailableMetadata(reason: warning))
         }
 
         do {
@@ -385,7 +452,13 @@ actor APIService {
                     )
                 )
             }
-            return APIResponse(value: fallback(), metadata: fallbackMetadata(error: error))
+            let warningPrefix = requireLiveData
+                ? "Live API unavailable and no cached snapshot is available."
+                : "Live API unavailable. Cached snapshot is unavailable right now."
+            return APIResponse(
+                value: emptyFallback(),
+                metadata: unavailableMetadata(reason: "\(warningPrefix) \(error.localizedDescription)")
+            )
         }
     }
 
@@ -398,14 +471,14 @@ actor APIService {
             [Athlete].self,
             path: path,
             cacheKey: CacheKey.athletes.rawValue
-        ) { MockData.athletes }
+        ) { [] }
         let guardedAthletes = response.value.map(guardrailAthlete)
         athleteCache = guardedAthletes
         return APIResponse(value: guardedAthletes, metadata: response.metadata)
     }
 
     func fetchAthlete(id: String) async throws -> Athlete {
-        guard let athlete = athleteCache.first(where: { $0.id == id }) ?? MockData.athletes.first(where: { $0.id == id }) else {
+        guard let athlete = athleteCache.first(where: { $0.id == id }) else {
             throw APIError.notFound
         }
         return athlete
@@ -422,14 +495,14 @@ actor APIService {
             [Meet].self,
             path: "meets",
             cacheKey: CacheKey.meets.rawValue
-        ) { MockData.meets }
+        ) { [] }
         let guardedMeets = response.value.map(guardrailMeet)
         meetCache = guardedMeets
         return APIResponse(value: guardedMeets, metadata: response.metadata)
     }
 
     func fetchMeet(id: String) async throws -> Meet {
-        guard let meet = meetCache.first(where: { $0.id == id }) ?? MockData.meets.first(where: { $0.id == id }) else {
+        guard let meet = meetCache.first(where: { $0.id == id }) else {
             throw APIError.notFound
         }
         return meet
@@ -451,7 +524,7 @@ actor APIService {
             path: "events/\(eventID)/results",
             cacheKey: CacheKey.results(eventID: eventID)
         ) {
-            MockData.results.filter { $0.eventID == eventID }
+            []
         }
         return APIResponse(value: response.value.map(guardrailResult), metadata: response.metadata)
     }
@@ -463,7 +536,7 @@ actor APIService {
             [CompetitiveStoryline].self,
             path: "storylines",
             cacheKey: CacheKey.storylines.rawValue
-        ) { MockData.storylines }
+        ) { [] }
         let guardedStorylines = response.value.map(guardrailStoryline)
         storylineCache = guardedStorylines
         return APIResponse(value: guardedStorylines, metadata: response.metadata)
@@ -478,7 +551,10 @@ actor APIService {
         context: [String: String] = [:],
         sources: [String] = []
     ) async throws -> APIResponse<InsightResult> {
-        guard liveAPIEnabled, let base = baseURL else {
+        guard liveAPIEnabled else {
+            throw APIError.liveAPIDisabled
+        }
+        guard let base = baseURL else {
             throw APIError.invalidBaseURL
         }
 
@@ -525,6 +601,24 @@ enum APIError: Error {
     case invalidBaseURL
     case invalidResponse
     case httpStatus(Int)
+    case liveAPIDisabled
+}
+
+extension APIError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .notFound:
+            return "Requested item was not found in the current live dataset."
+        case .invalidBaseURL:
+            return "Live API base URL is invalid."
+        case .invalidResponse:
+            return "Live API returned an unexpected response."
+        case let .httpStatus(code):
+            return "Live API request failed with status \(code)."
+        case .liveAPIDisabled:
+            return "Live API is disabled in settings."
+        }
+    }
 }
 
 // MARK: - Mock Data
@@ -533,8 +627,8 @@ private enum MockData {
 
     // MARK: Shared date helpers
     static func date(_ iso: String) -> Date {
-        let f = ISO8601DateFormatter()
-        return f.date(from: iso) ?? Date()
+        let formatter = ISO8601DateFormatter()
+        return formatter.date(from: iso) ?? Date()
     }
 
     // MARK: Results
@@ -605,7 +699,8 @@ private enum MockData {
             discipline: "400m Hurdles",
             personalBest: "50.68 WR",
             isFollowing: false,
-            recentResults: [results[0]]
+            recentResults: [results[0]],
+            status: .active
         ),
         Athlete(
             id: "a2",
@@ -614,7 +709,8 @@ private enum MockData {
             discipline: "100m / 200m",
             personalBest: "9.83 / 19.70",
             isFollowing: false,
-            recentResults: [results[1]]
+            recentResults: [results[1]],
+            status: .active
         ),
         Athlete(
             id: "a3",
@@ -623,7 +719,8 @@ private enum MockData {
             discipline: "1500m",
             personalBest: "3:49.11 WR",
             isFollowing: false,
-            recentResults: [results[2]]
+            recentResults: [results[2]],
+            status: .active
         ),
         Athlete(
             id: "a4",
@@ -632,7 +729,8 @@ private enum MockData {
             discipline: "Pole Vault",
             personalBest: "6.26m WR",
             isFollowing: false,
-            recentResults: [results[3]]
+            recentResults: [results[3]],
+            status: .active
         ),
         Athlete(
             id: "a5",
@@ -641,7 +739,8 @@ private enum MockData {
             discipline: "100m / 200m",
             personalBest: "10.71 / 21.60",
             isFollowing: false,
-            recentResults: [results[4]]
+            recentResults: [results[4]],
+            status: .active
         ),
         Athlete(
             id: "a6",
@@ -650,7 +749,8 @@ private enum MockData {
             discipline: "100m",
             personalBest: "9.80",
             isFollowing: false,
-            recentResults: []
+            recentResults: [],
+            status: .active
         ),
         Athlete(
             id: "a7",
@@ -659,7 +759,8 @@ private enum MockData {
             discipline: "800m",
             personalBest: "1:55.04",
             isFollowing: false,
-            recentResults: []
+            recentResults: [],
+            status: .active
         ),
         Athlete(
             id: "a8",
@@ -668,7 +769,8 @@ private enum MockData {
             discipline: "1500m / 5000m",
             personalBest: "3:43.73 / 12:48.45",
             isFollowing: false,
-            recentResults: []
+            recentResults: [],
+            status: .active
         )
     ]
 

@@ -22,7 +22,7 @@ struct PrivacyView: View {
                                 "Notification preferences and event group filters",
                                 "API base URL and live API toggle state",
                                 "Cached athlete, meet, and storyline data (device cache folder)",
-                                "App event log — rolling JSON file, 512 KB max, never transmitted",
+                                    "App event log — rolling JSON file, 512 KB max, never transmitted"
                             ]
                         )
 
@@ -34,7 +34,7 @@ struct PrivacyView: View {
                                 "No location data",
                                 "No photos, contacts, or biometric data",
                                 "No advertising identifiers",
-                                "No analytics SDKs or third-party tracking",
+                                    "No analytics SDKs or third-party tracking"
                             ]
                         )
 
@@ -45,7 +45,7 @@ struct PrivacyView: View {
                                 "Insights are generated from public competition results and deterministic analytics",
                                 "No personal user data is sent to any AI model",
                                 "All insights pass through Athena guardrails before display",
-                                "If source data is incomplete, the insight will say so explicitly",
+                                    "If source data is incomplete, the insight will say so explicitly"
                             ]
                         )
 
@@ -55,7 +55,7 @@ struct PrivacyView: View {
                             items: [
                                 "Local notifications are scheduled on-device only",
                                 "Backend queue mode sends notification metadata to your configured API endpoint",
-                                "No notification content is shared with third parties",
+                                    "No notification content is shared with third parties"
                             ]
                         )
 
@@ -68,7 +68,7 @@ struct PrivacyView: View {
                                 "Track & Field News (trackandfieldnews.com)",
                                 "MileSplit (milesplit.com)",
                                 "Athletic.net",
-                                "LA28 Athletics schedule (hospitality.la28.org)",
+                                    "LA28 Athletics schedule (hospitality.la28.org)"
                             ]
                         )
                     }
@@ -80,9 +80,11 @@ struct PrivacyView: View {
                         Text("Questions about this privacy disclosure?")
                             .font(.subheadline)
                             .foregroundStyle(AthenaTheme.stone)
-                        Link("support@athena.example.com", destination: URL(string: "mailto:support@athena.example.com")!)
-                            .font(.subheadline)
-                            .foregroundStyle(AthenaTheme.teal)
+                        if let contactURL = URL(string: "mailto:support@athena.example.com") {
+                            Link("support@athena.example.com", destination: contactURL)
+                                .font(.subheadline)
+                                .foregroundStyle(AthenaTheme.teal)
+                        }
                     }
                     .padding()
                     .athenaCard()

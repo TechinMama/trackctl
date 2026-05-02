@@ -1,0 +1,122 @@
+name: Backend Image (Dev)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - backend/**
+      - .github/workflows/backend-image-dev.yml
+
+concurrency:
+  group: backend-image-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ACR_NAME: acrathenadev
+      IMAGE_NAME: athena-backend
+      IMAGE_TAG: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push image with ACR Tasks
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$IMAGE_NAME:$IMAGE_TAG" \
+            ./backend
+
+      - name: Show image reference
+        run: |
+          echo "Image pushed: ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Deploy to Container App
+        env:
+          CONTAINER_APP_NAME: ca-athena-dev-backend
+          RESOURCE_GROUP: rg-athena-dev
+        run: |
+          az containerapp update \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Run Alembic migrations
+        env:
+          RESOURCE_GROUP: rg-athena-dev
+          JOB_NAME: athena-migrate-dev
+          MANAGED_ENV: cae-athena-dev
+        run: |
+          ACR_USER=$(az acr credential show --name "$ACR_NAME" --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
+
+          # Delete previous job if it exists (idempotent)
+          az containerapp job delete \
+            --name "$JOB_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --yes 2>/dev/null || true
+
+          az containerapp job create \
+            --name "$JOB_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --environment "$MANAGED_ENV" \
+            --trigger-type Manual \
+            --replica-timeout 120 \
+            --replica-retry-limit 0 \
+            --image "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}" \
+            --registry-server "${ACR_NAME}.azurecr.io" \
+            --registry-username "$ACR_USER" \
+            --registry-password "$ACR_PASS" \
+            --cpu 0.25 --memory 0.5Gi \
+            --command "alembic" \
+            --args "upgrade" "head" \
+            --secrets "database-url=${{ secrets.DATABASE_URL }}" \
+            --env-vars "DATABASE_URL=secretref:database-url"
+
+          az containerapp job start \
+            --name "$JOB_NAME" \
+            --resource-group "$RESOURCE_GROUP"
+
+          # Poll until job execution completes (max ~2 min)
+          for i in $(seq 1 24); do
+            STATUS=$(az containerapp job execution list \
+              --name "$JOB_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "[-1].properties.status" -o tsv 2>/dev/null || echo "Unknown")
+            echo "Migration job status: $STATUS"
+            if [ "$STATUS" = "Succeeded" ]; then
+              echo "Migrations completed successfully."; break
+            elif [ "$STATUS" = "Failed" ]; then
+              echo "Migration job failed. Fetching logs from Log Analytics..."
+              WORKSPACE_ID=$(az containerapp env show \
+                --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" \
+                --query "properties.appLogsConfiguration.logAnalyticsConfiguration.customerId" \
+                -o tsv 2>/dev/null || echo "")
+              if [ -n "$WORKSPACE_ID" ]; then
+                az monitor log-analytics query \
+                  --workspace "$WORKSPACE_ID" \
+                  --analytics-query "ContainerAppConsoleLogs_CL | where ContainerGroupName_s startswith '${JOB_NAME}' | order by TimeGenerated desc | take 50 | project TimeGenerated, Log_s" \
+                  --output table 2>&1 || true
+              fi
+              exit 1
+            fi
+            sleep 5
+          done

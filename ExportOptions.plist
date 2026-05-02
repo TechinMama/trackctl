@@ -8,6 +8,13 @@
     <string>upload</string>
     <key>signingStyle</key>
     <string>manual</string>
+    <key>teamID</key>
+    <string>38L5S89U5V</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.mccoyale.athena</key>
+        <string>Athena Distribution</string>
+    </dict>
     <key>stripSwiftSymbols</key>
     <true/>
     <key>uploadBitcode</key>

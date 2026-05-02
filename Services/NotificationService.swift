@@ -35,7 +35,7 @@ class NotificationService {
     }
 
     private var apiBaseURL: URL? {
-        let raw = UserDefaults.standard.string(forKey: apiBaseURLKey) ?? "http://localhost:8080"
+        let raw = UserDefaults.standard.string(forKey: apiBaseURLKey) ?? "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io"
         return URL(string: raw)
     }
 
@@ -123,7 +123,7 @@ class NotificationService {
     // Schedules competing-today alerts for all followed athletes with events today.
     func scheduleNotificationsForFollowedAthletes(_ athletes: [Athlete], meets: [Meet]) {
         let today = Calendar.current.startOfDay(for: Date())
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today.addingTimeInterval(86400)
 
         for meet in meets where meet.date >= today && meet.date < tomorrow {
             for event in meet.events {

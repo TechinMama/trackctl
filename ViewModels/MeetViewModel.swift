@@ -32,6 +32,9 @@ class MeetViewModel {
             : "Sources: \(response.metadata.citations.joined(separator: " • "))"
         isUsingFallback = response.metadata.source == .fallback
         dataWarning = response.metadata.warning
+        if meets.isEmpty {
+            errorMessage = response.metadata.warning ?? "No live meet data available yet."
+        }
         isLoading = false
     }
     

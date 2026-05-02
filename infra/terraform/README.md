@@ -17,12 +17,16 @@ This folder provisions Azure infrastructure for the Athena backend.
 ```bash
 cd infra/terraform
 terraform init
-terraform plan -var-file=envs/dev/dev.tfvars
-terraform apply -var-file=envs/dev/dev.tfvars
+terraform plan -var-file=envs/dev/dev.tfvars.example
+terraform apply -var-file=envs/dev/dev.tfvars.example
+
+# Test profile
+terraform plan -var-file=envs/test/test.tfvars.example
+terraform apply -var-file=envs/test/test.tfvars.example
 
 # Production profile
-terraform plan -var-file=envs/prod/prod.tfvars
-terraform apply -var-file=envs/prod/prod.tfvars
+terraform plan -var-file=envs/prod/prod.tfvars.example
+terraform apply -var-file=envs/prod/prod.tfvars.example
 ```
 
 ## Notes
@@ -30,6 +34,35 @@ terraform apply -var-file=envs/prod/prod.tfvars
 - Set `postgres_admin_password` via secure secret injection (for example, TF_VAR_postgres_admin_password in CI).
 - Container App is configured with managed identity and ACR pull assignment.
 - Fill in `container_image` with your pushed backend image before apply.
+
+## CI authentication prerequisites
+
+`terraform plan` against the AzureRM provider requires authenticated Azure access. Before enabling the CI plan step for real deployments, configure GitHub Actions with Azure federation or a service principal.
+
+Recommended path: GitHub OIDC with `azure/login`.
+
+Required GitHub Actions configuration:
+
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `TF_VAR_postgres_admin_password`
+
+Required workflow capability:
+
+- `permissions: id-token: write`
+
+Once those are configured, add an Azure login step before `terraform plan` so the AzureRM provider can resolve the tenant and subscription context.
+
+## Apply guardrail for test/prod
+
+The apply workflow exposes `dev`, `test`, and `prod` options. Non-dev applies are blocked by default.
+
+To allow `test` or `prod` applies:
+
+- Set repository variable `ENABLE_NON_DEV_APPLY=true`
+- Create matching GitHub Environments (`test`, `prod`) with approvals
+- Add OIDC federated credentials for `environment:test` and `environment:prod`
 
 ## Cost-efficient dev profile
 

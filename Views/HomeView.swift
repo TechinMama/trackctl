@@ -174,7 +174,7 @@ struct MeetCardView: View {
                     .font(.caption)
                     .foregroundStyle(AthenaTheme.bone)
                 Spacer()
-                if let _ = meet.watchURL {
+                     if meet.watchURL != nil {
                     Label("Watch", systemImage: "play.circle.fill")
                         .font(.caption)
                         .foregroundStyle(AthenaTheme.teal)

@@ -20,6 +20,11 @@ on:
 jobs:
   archive-and-release:
     runs-on: macos-latest
+    env:
+      APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+      APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+      ATHENA_API_BASE_URL: ${{ secrets.ATHENA_API_BASE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,13 +54,42 @@ jobs:
         run: |
           PP_PATH=$RUNNER_TEMP/athena.mobileprovision
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
+
+          # Extract UUID and name from the profile for use in xcodebuild
+          PP_UUID=$(security cms -D -i "$PP_PATH" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+          PP_NAME=$(security cms -D -i "$PP_PATH" | plutil -extract Name xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+          # Copy with UUID filename — standard Apple convention for profile resolution
+          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"${PP_UUID}.mobileprovision"
+
+          echo "PP_UUID=${PP_UUID}" >> $GITHUB_ENV
+          echo "PP_NAME=${PP_NAME}" >> $GITHUB_ENV
+          echo "Installed profile: ${PP_NAME} (${PP_UUID})"
 
       - name: Archive
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
+          if [ -z "$ATHENA_API_BASE_URL" ]; then
+            echo "Missing ATHENA_API_BASE_URL secret."
+            exit 1
+          fi
+
+          case "$ATHENA_API_BASE_URL" in
+            https://*) ;;
+            *)
+              echo "ATHENA_API_BASE_URL must start with https://"
+              exit 1
+              ;;
+          esac
+
+          if [[ "$ATHENA_API_BASE_URL" == *"athena.example.com"* ]]; then
+            echo "ATHENA_API_BASE_URL is still using example placeholder domain."
+            echo "Set it to your real deployed backend endpoint."
+            exit 1
+          fi
+
           xcodebuild archive \
             -project Athena.xcodeproj \
             -scheme Athena \
@@ -63,6 +97,14 @@ jobs:
             -archivePath $RUNNER_TEMP/Athena.xcarchive \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=38L5S89U5V \
+            CODE_SIGN_IDENTITY="iPhone Distribution" \
+            PROVISIONING_PROFILE="$PP_UUID" \
+            PROVISIONING_PROFILE_SPECIFIER="$PP_NAME" \
+            ATHENA_API_BASE_URL="$ATHENA_API_BASE_URL" \
+            ATHENA_LIVE_API_ENABLED=YES \
+            ATHENA_REQUIRE_LIVE_DATA=YES \
+            ATHENA_MANAGED_API_SETTINGS=YES \
             SENTRY_DSN="$SENTRY_DSN" \
             | xcpretty && exit ${PIPESTATUS[0]}
 
@@ -82,11 +124,7 @@ jobs:
           retention-days: 30
 
       - name: Upload to TestFlight
-        if: ${{ (github.event_name == 'push' || inputs.upload_to_testflight) && secrets.APPSTORE_API_KEY_ID != '' && secrets.APPSTORE_API_ISSUER_ID != '' && secrets.APPSTORE_API_PRIVATE_KEY != '' }}
-        env:
-          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
-          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
-          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+        if: (github.event_name == 'push' || inputs.upload_to_testflight) && env.APPSTORE_API_KEY_ID != '' && env.APPSTORE_API_ISSUER_ID != '' && env.APPSTORE_API_PRIVATE_KEY != ''
         run: |
           mkdir -p $RUNNER_TEMP/private_keys
           KEY_FILE=$RUNNER_TEMP/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8

@@ -31,6 +31,11 @@ class HomeViewModel {
         self.storylines = rankStorylines(storylineResponse.value)
         self.upcomingMeets = meetResponse.value
 
+        if self.storylines.isEmpty && self.upcomingMeets.isEmpty {
+            let warning = [storylineResponse.metadata.warning, meetResponse.metadata.warning].compactMap { $0 }.first
+            self.errorMessage = warning ?? "No live dashboard data available yet."
+        }
+
         let fetchedTimes = [storylineResponse.metadata.fetchedAt, meetResponse.metadata.fetchedAt]
         self.lastUpdated = fetchedTimes.max()
         self.generatedAt = [storylineResponse.metadata.generatedAt, meetResponse.metadata.generatedAt].compactMap { $0 }.max()
