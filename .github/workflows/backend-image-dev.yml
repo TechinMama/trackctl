@@ -148,8 +148,8 @@ jobs:
             --registry-username "$ACR_USER" \
             --registry-password "$ACR_PASS" \
             --cpu 0.25 --memory 0.5Gi \
-            --command "/bin/sh" \
-            --args "-c" "python -m scripts.seed_athletes" \
+            --command "python" \
+            --args "scripts/seed_athletes.py" \
             --secrets "database-url=${{ secrets.DATABASE_URL }}" \
             --env-vars "DATABASE_URL=secretref:database-url"
 
