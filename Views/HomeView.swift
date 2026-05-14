@@ -129,10 +129,8 @@ struct StorylineCard: View {
                 .frame(height: 1)
 
             HStack(alignment: .top, spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.caption)
-                    .foregroundStyle(AthenaTheme.teal)
-                    .padding(.top, 2)
+                AthenaMiniMark(size: 14)
+                    .padding(.top, 1)
                 Text(storyline.aiGeneratedInsight)
                     .font(.caption)
                     .foregroundStyle(AthenaTheme.bone)

@@ -453,10 +453,8 @@ struct ResultRowView: View {
                     .fill(AthenaTheme.divider)
                     .frame(height: 1)
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .font(.caption)
-                        .foregroundStyle(AthenaTheme.teal)
-                        .padding(.top, 2)
+                    AthenaMiniMark(size: 14)
+                        .padding(.top, 1)
                     Text(insight)
                         .font(.caption)
                         .foregroundStyle(AthenaTheme.bone)

@@ -130,6 +130,128 @@ struct AthenaMark: View {
     }
 }
 
+struct AthenaMiniMark: View {
+    var size: CGFloat = 14
+    
+    private struct Metrics {
+        let cornerRatio: CGFloat
+        let borderWidthRatio: CGFloat
+        let ringTrimStart: CGFloat
+        let ringTrimEnd: CGFloat
+        let ringLineWidthRatio: CGFloat
+        let ringFrameRatio: CGFloat
+        let aLineWidthRatio: CGFloat
+        let aLineWidthMinimum: CGFloat
+        let barLineWidthRatio: CGFloat
+        let barLineWidthMinimum: CGFloat
+        let paddingRatio: CGFloat
+    }
+    
+    private var metrics: Metrics {
+        switch size {
+        case ..<13:
+            return Metrics(
+                cornerRatio: 0.23,
+                borderWidthRatio: 0.06,
+                ringTrimStart: 0.16,
+                ringTrimEnd: 0.82,
+                ringLineWidthRatio: 0.08,
+                ringFrameRatio: 0.82,
+                aLineWidthRatio: 0.14,
+                aLineWidthMinimum: 1.4,
+                barLineWidthRatio: 0.09,
+                barLineWidthMinimum: 1.1,
+                paddingRatio: 0.15
+            )
+        case ..<15:
+            return Metrics(
+                cornerRatio: 0.24,
+                borderWidthRatio: 0.07,
+                ringTrimStart: 0.14,
+                ringTrimEnd: 0.84,
+                ringLineWidthRatio: 0.09,
+                ringFrameRatio: 0.84,
+                aLineWidthRatio: 0.15,
+                aLineWidthMinimum: 1.6,
+                barLineWidthRatio: 0.10,
+                barLineWidthMinimum: 1.2,
+                paddingRatio: 0.16
+            )
+        default:
+            return Metrics(
+                cornerRatio: 0.24,
+                borderWidthRatio: 0.075,
+                ringTrimStart: 0.13,
+                ringTrimEnd: 0.85,
+                ringLineWidthRatio: 0.095,
+                ringFrameRatio: 0.85,
+                aLineWidthRatio: 0.155,
+                aLineWidthMinimum: 1.8,
+                barLineWidthRatio: 0.105,
+                barLineWidthMinimum: 1.3,
+                paddingRatio: 0.16
+            )
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * metrics.cornerRatio, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [AthenaTheme.panelRaised, AthenaTheme.graphite],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: size * metrics.cornerRatio, style: .continuous)
+                        .stroke(AthenaTheme.teal.opacity(0.38), lineWidth: max(1, size * metrics.borderWidthRatio))
+                )
+
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                let height = proxy.size.height
+
+                ZStack {
+                    Circle()
+                        .trim(from: metrics.ringTrimStart, to: metrics.ringTrimEnd)
+                        .stroke(AthenaTheme.teal.opacity(0.95), lineWidth: max(1, width * metrics.ringLineWidthRatio))
+                        .frame(width: width * metrics.ringFrameRatio, height: height * metrics.ringFrameRatio)
+
+                    Path { path in
+                        path.move(to: CGPoint(x: width * 0.26, y: height * 0.79))
+                        path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.24))
+                        path.addLine(to: CGPoint(x: width * 0.74, y: height * 0.79))
+                    }
+                    .stroke(
+                        Color.white,
+                        style: StrokeStyle(
+                            lineWidth: max(metrics.aLineWidthMinimum, width * metrics.aLineWidthRatio),
+                            lineCap: .round,
+                            lineJoin: .round
+                        )
+                    )
+
+                    Path { path in
+                        path.move(to: CGPoint(x: width * 0.38, y: height * 0.56))
+                        path.addLine(to: CGPoint(x: width * 0.62, y: height * 0.56))
+                    }
+                    .stroke(
+                        AthenaTheme.tealMuted,
+                        style: StrokeStyle(
+                            lineWidth: max(metrics.barLineWidthMinimum, width * metrics.barLineWidthRatio),
+                            lineCap: .round
+                        )
+                    )
+                }
+            }
+            .padding(size * metrics.paddingRatio)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
 struct AthenaHeroHeader: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
