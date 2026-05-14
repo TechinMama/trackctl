@@ -27,6 +27,14 @@ struct SettingsView: View {
         }
         return true
     }
+
+    private var apiSettingsLocked: Bool {
+#if DEBUG
+        false
+#else
+        managedAPISettings
+#endif
+    }
     
     var body: some View {
         NavigationStack {
@@ -91,13 +99,17 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundStyle(AthenaTheme.stone)
 
-                        if managedAPISettings {
+                        if apiSettingsLocked {
                             Text("API settings are managed by this build configuration.")
+                                .font(.caption)
+                                .foregroundStyle(AthenaTheme.stone)
+                        } else if managedAPISettings {
+                            Text("Managed API settings are enabled for this build, but editable in Debug for local testing.")
                                 .font(.caption)
                                 .foregroundStyle(AthenaTheme.stone)
                         }
                     }
-                    .disabled(managedAPISettings)
+                    .disabled(apiSettingsLocked)
 
                     Section("Notification Delivery") {
                         Picker("Delivery Mode", selection: $notificationDeliveryMode) {

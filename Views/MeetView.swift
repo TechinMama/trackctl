@@ -52,19 +52,37 @@ struct MeetListView: View {
                     if viewModel.isLoading {
                         ProgressView()
                             .tint(AthenaTheme.teal)
+                            .frame(maxWidth: .infinity, alignment: .center)
                     } else if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
                             .foregroundStyle(AthenaTheme.alert)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
                     } else {
-                        List(viewModel.getMeetsByStatus(selectedStatus)) { meet in
-                            NavigationLink(destination: MeetDetailView(meet: meet)) {
-                                MeetListItemView(meet: meet)
+                        let filteredMeets = viewModel.getMeetsByStatus(selectedStatus)
+                        if filteredMeets.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("No \(selectedStatus.rawValue.capitalized) events yet.")
+                                    .font(.headline)
+                                    .foregroundStyle(AthenaTheme.bone)
+                                Text("Live events will appear here after the next data refresh.")
+                                    .font(.caption)
+                                    .foregroundStyle(AthenaTheme.stone)
                             }
+                            .padding()
+                            .athenaCard()
+                            .padding(.horizontal)
+                        } else {
+                            List(filteredMeets) { meet in
+                                NavigationLink(destination: MeetDetailView(meet: meet)) {
+                                    MeetListItemView(meet: meet)
+                                }
+                            }
+                            .scrollContentBackground(.hidden)
+                            .scrollDisabled(false)
+                            .background(Color.clear)
+                            .listStyle(.plain)
                         }
-                        .scrollContentBackground(.hidden)
-                        .scrollDisabled(false)
-                        .background(Color.clear)
-                        .listStyle(.plain)
 
                         Text(viewModel.sourceCitationText)
                             .font(.caption2)
@@ -73,7 +91,10 @@ struct MeetListView: View {
                             .padding(.horizontal)
                             .padding(.bottom, 8)
                     }
+
+                    Spacer(minLength: 0)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .navigationTitle("Events")
             .task {
