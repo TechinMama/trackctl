@@ -1,27 +1,28 @@
 import SwiftUI
 
 enum AthenaTheme {
-    static let charcoal = Color(red: 0.17, green: 0.11, blue: 0.28)
-    static let graphite = Color(red: 0.29, green: 0.20, blue: 0.45)
-    static let panel = Color(red: 0.41, green: 0.30, blue: 0.64)
-    static let panelRaised = Color(red: 0.56, green: 0.42, blue: 0.82)
-    static let bone = Color(red: 1.00, green: 0.99, blue: 1.00)
-    static let stone = Color(red: 0.93, green: 0.88, blue: 0.98)
+    static let charcoal = Color(red: 0.05, green: 0.05, blue: 0.08)
+    static let graphite = Color(red: 0.12, green: 0.10, blue: 0.18)
+    static let panel = Color(red: 0.19, green: 0.15, blue: 0.28)
+    static let panelRaised = Color(red: 0.30, green: 0.23, blue: 0.43)
+    static let bone = Color(red: 0.96, green: 0.95, blue: 0.97)
+    static let stone = Color(red: 0.80, green: 0.79, blue: 0.84)
     // Keep existing property names to avoid touching feature code.
-    static let teal = Color(red: 0.98, green: 0.41, blue: 0.80)      // luminous orchid accent
-    static let tealMuted = Color(red: 0.79, green: 0.72, blue: 0.98) // soft lilac accent
-    static let lavender = Color(red: 0.77, green: 0.64, blue: 0.98)
-    static let magenta = Color(red: 0.92, green: 0.34, blue: 0.77)
-    static let ink = Color(red: 0.13, green: 0.10, blue: 0.20)
-    static let inkMuted = Color(red: 0.33, green: 0.28, blue: 0.44)
+    static let teal = Color(red: 0.95, green: 0.74, blue: 0.34)      // metallic gold accent
+    static let tealMuted = Color(red: 0.84, green: 0.82, blue: 0.88) // silver accent
+    static let lavender = Color(red: 0.43, green: 0.33, blue: 0.59)  // plum accent
+    static let magenta = Color(red: 0.66, green: 0.51, blue: 0.82)
+    static let ink = Color(red: 0.95, green: 0.94, blue: 0.97)
+    static let inkMuted = Color(red: 0.78, green: 0.76, blue: 0.82)
     static let alert = Color(red: 0.98, green: 0.43, blue: 0.37)
-    static let divider = Color.white.opacity(0.20)
+    static let divider = Color.white.opacity(0.16)
 
     static let heroGradient = LinearGradient(
         colors: [
-            Color(red: 1.00, green: 1.00, blue: 1.00),
-            Color(red: 0.98, green: 0.95, blue: 1.00),
-            lavender.opacity(0.30)
+            ink,
+            graphite,
+            panel,
+            Color(red: 0.12, green: 0.08, blue: 0.20)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -29,9 +30,11 @@ enum AthenaTheme {
 
     static let luxePanelGradient = LinearGradient(
         colors: [
+            Color(red: 0.38, green: 0.30, blue: 0.54),
             panelRaised,
             panel,
-            graphite
+            graphite,
+            charcoal
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -48,7 +51,7 @@ struct AthenaBackdrop: View {
                 HStack {
                     Circle()
                         .trim(from: 0.08, to: 0.74)
-                        .stroke(AthenaTheme.tealMuted.opacity(0.30), lineWidth: 3)
+                        .stroke(AthenaTheme.teal.opacity(0.24), lineWidth: 3)
                         .frame(width: 220, height: 220)
                         .offset(x: -90, y: -80)
                     Spacer()
@@ -62,7 +65,7 @@ struct AthenaBackdrop: View {
                     Spacer()
                     Circle()
                         .trim(from: 0.16, to: 0.86)
-                        .stroke(AthenaTheme.magenta.opacity(0.28), lineWidth: 4)
+                        .stroke(AthenaTheme.tealMuted.opacity(0.24), lineWidth: 4)
                         .frame(width: 260, height: 260)
                         .offset(x: 100, y: 120)
                 }
@@ -76,8 +79,83 @@ struct AthenaMark: View {
     var size: CGFloat = 44
 
     var body: some View {
+        Image("AthenaMark")
+            .resizable()
+            .renderingMode(.original)
+            .interpolation(.high)
+            .antialiased(true)
+            .scaledToFit()
+            .frame(width: size, height: size)
+    }
+}
+
+struct AthenaMiniMark: View {
+    var size: CGFloat = 14
+    
+    private struct Metrics {
+        let cornerRatio: CGFloat
+        let borderWidthRatio: CGFloat
+        let ringTrimStart: CGFloat
+        let ringTrimEnd: CGFloat
+        let ringLineWidthRatio: CGFloat
+        let ringFrameRatio: CGFloat
+        let aLineWidthRatio: CGFloat
+        let aLineWidthMinimum: CGFloat
+        let barLineWidthRatio: CGFloat
+        let barLineWidthMinimum: CGFloat
+        let paddingRatio: CGFloat
+    }
+    
+    private var metrics: Metrics {
+        switch size {
+        case ..<13:
+            return Metrics(
+                cornerRatio: 0.23,
+                borderWidthRatio: 0.06,
+                ringTrimStart: 0.16,
+                ringTrimEnd: 0.82,
+                ringLineWidthRatio: 0.08,
+                ringFrameRatio: 0.82,
+                aLineWidthRatio: 0.14,
+                aLineWidthMinimum: 1.4,
+                barLineWidthRatio: 0.09,
+                barLineWidthMinimum: 1.1,
+                paddingRatio: 0.15
+            )
+        case ..<15:
+            return Metrics(
+                cornerRatio: 0.24,
+                borderWidthRatio: 0.07,
+                ringTrimStart: 0.14,
+                ringTrimEnd: 0.84,
+                ringLineWidthRatio: 0.09,
+                ringFrameRatio: 0.84,
+                aLineWidthRatio: 0.15,
+                aLineWidthMinimum: 1.6,
+                barLineWidthRatio: 0.10,
+                barLineWidthMinimum: 1.2,
+                paddingRatio: 0.16
+            )
+        default:
+            return Metrics(
+                cornerRatio: 0.24,
+                borderWidthRatio: 0.075,
+                ringTrimStart: 0.13,
+                ringTrimEnd: 0.85,
+                ringLineWidthRatio: 0.095,
+                ringFrameRatio: 0.85,
+                aLineWidthRatio: 0.155,
+                aLineWidthMinimum: 1.8,
+                barLineWidthRatio: 0.105,
+                barLineWidthMinimum: 1.3,
+                paddingRatio: 0.16
+            )
+        }
+    }
+
+    var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+            RoundedRectangle(cornerRadius: size * metrics.cornerRatio, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [AthenaTheme.panelRaised, AthenaTheme.graphite],
@@ -86,8 +164,8 @@ struct AthenaMark: View {
                     )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-                        .stroke(AthenaTheme.teal.opacity(0.32), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: size * metrics.cornerRatio, style: .continuous)
+                        .stroke(AthenaTheme.teal.opacity(0.38), lineWidth: max(1, size * metrics.borderWidthRatio))
                 )
 
             GeometryReader { proxy in
@@ -96,35 +174,38 @@ struct AthenaMark: View {
 
                 ZStack {
                     Circle()
-                        .trim(from: 0.10, to: 0.86)
-                        .stroke(AthenaTheme.teal.opacity(0.85), lineWidth: width * 0.05)
-                        .frame(width: width * 0.88, height: height * 0.88)
+                        .trim(from: metrics.ringTrimStart, to: metrics.ringTrimEnd)
+                        .stroke(AthenaTheme.teal.opacity(0.95), lineWidth: max(1, width * metrics.ringLineWidthRatio))
+                        .frame(width: width * metrics.ringFrameRatio, height: height * metrics.ringFrameRatio)
 
                     Path { path in
-                        path.move(to: CGPoint(x: width * 0.23, y: height * 0.82))
-                        path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.18))
-                        path.addLine(to: CGPoint(x: width * 0.77, y: height * 0.82))
+                        path.move(to: CGPoint(x: width * 0.26, y: height * 0.79))
+                        path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.24))
+                        path.addLine(to: CGPoint(x: width * 0.74, y: height * 0.79))
                     }
-                    .stroke(Color.white, style: StrokeStyle(lineWidth: width * 0.125, lineCap: .round, lineJoin: .round))
+                    .stroke(
+                        Color.white,
+                        style: StrokeStyle(
+                            lineWidth: max(metrics.aLineWidthMinimum, width * metrics.aLineWidthRatio),
+                            lineCap: .round,
+                            lineJoin: .round
+                        )
+                    )
 
                     Path { path in
-                        path.move(to: CGPoint(x: width * 0.36, y: height * 0.55))
-                        path.addLine(to: CGPoint(x: width * 0.64, y: height * 0.55))
+                        path.move(to: CGPoint(x: width * 0.38, y: height * 0.56))
+                        path.addLine(to: CGPoint(x: width * 0.62, y: height * 0.56))
                     }
-                    .stroke(AthenaTheme.tealMuted, style: StrokeStyle(lineWidth: width * 0.085, lineCap: .round))
-
-                    Ellipse()
-                        .fill(AthenaTheme.bone)
-                        .frame(width: width * 0.18, height: height * 0.10)
-                        .offset(y: -height * 0.05)
-
-                    Circle()
-                        .fill(AthenaTheme.charcoal)
-                        .frame(width: width * 0.05)
-                        .offset(y: -height * 0.05)
+                    .stroke(
+                        AthenaTheme.tealMuted,
+                        style: StrokeStyle(
+                            lineWidth: max(metrics.barLineWidthMinimum, width * metrics.barLineWidthRatio),
+                            lineCap: .round
+                        )
+                    )
                 }
             }
-            .padding(size * 0.16)
+            .padding(size * metrics.paddingRatio)
         }
         .frame(width: size, height: size)
     }
@@ -160,7 +241,7 @@ struct AthenaHeroHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 14) {
-                AthenaMark(size: 54)
+                AthenaMark(size: 72)
 
                 VStack(alignment: .leading, spacing: 6) {
                     if let eyebrow {
@@ -170,8 +251,11 @@ struct AthenaHeroHeader: View {
                     }
 
                     Text(title)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .font(.system(size: 28, weight: .bold, design: .serif))
+                        .tracking(0.3)
                         .foregroundStyle(AthenaTheme.bone)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.92)
 
                     Text(subtitle)
                         .font(.subheadline)
@@ -201,16 +285,16 @@ struct AthenaHeroHeader: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AthenaTheme.luxePanelGradient.opacity(0.95))
+                .fill(AthenaTheme.luxePanelGradient.opacity(0.98))
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(AthenaTheme.teal.opacity(0.22), lineWidth: 1)
+                        .stroke(AthenaTheme.teal.opacity(0.30), lineWidth: 1.1)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [Color.white.opacity(0.26), Color.white.opacity(0.00)],
+                                colors: [Color.white.opacity(0.24), Color.white.opacity(0.00)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -219,6 +303,7 @@ struct AthenaHeroHeader: View {
                     , alignment: .topLeading
                 )
         )
+        .shadow(color: Color.black.opacity(0.30), radius: 16, x: 0, y: 10)
     }
 }
 
@@ -240,9 +325,10 @@ struct AthenaPill: View {
                     .fill(AthenaTheme.luxePanelGradient)
                     .overlay(
                         Capsule(style: .continuous)
-                            .stroke(AthenaTheme.teal.opacity(0.26), lineWidth: 1)
+                            .stroke(AthenaTheme.teal.opacity(0.34), lineWidth: 1)
                     )
             )
+            .shadow(color: Color.black.opacity(0.24), radius: 4, x: 0, y: 2)
     }
 }
 
@@ -279,7 +365,7 @@ struct AthenaCardModifier: ViewModifier {
                     .fill(AthenaTheme.luxePanelGradient.opacity(0.97))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(AthenaTheme.teal.opacity(0.20), lineWidth: 1)
+                            .stroke(AthenaTheme.teal.opacity(0.28), lineWidth: 1)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -294,6 +380,7 @@ struct AthenaCardModifier: ViewModifier {
                         , alignment: .topLeading
                     )
             )
+            .shadow(color: Color.black.opacity(0.26), radius: 10, x: 0, y: 6)
     }
 }
 

@@ -324,6 +324,88 @@ def _is_runner(athlete: AthleteFull) -> bool:
     return any(sig in text for sig in _RUNNING_SIGNALS)
 
 
+def _filter_stub_athletes(
+    pool: list[AthleteFull],
+    q: str | None,
+    active_only: bool,
+    runners_only: bool,
+    limit: int,
+) -> list[AthleteFull]:
+    from datetime import timedelta
+
+    filtered = pool
+    cutoff = datetime.now(UTC) - timedelta(days=365)
+
+    if runners_only:
+        filtered = [a for a in filtered if _is_runner(a)]
+
+    if active_only:
+
+        def _has_recent_result(athlete: AthleteFull) -> bool:
+            for result in athlete.recentResults:
+                try:
+                    parsed = datetime.fromisoformat(result.date.replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if parsed >= cutoff:
+                    return True
+            return False
+
+        filtered = [a for a in filtered if a.recentResults and _has_recent_result(a)]
+
+    if q:
+        ql = q.lower()
+        filtered = [
+            a
+            for a in filtered
+            if ql in a.name.lower() or ql in a.country.lower() or ql in a.discipline.lower()
+        ]
+
+    return filtered[:limit]
+
+
+_MEET_FALLBACK_DATA: list[dict[str, object]] = [
+    {
+        "id": "m1",
+        "name": "Doha Diamond League",
+        "location": "Doha, Qatar",
+        "date": "2026-05-09T18:00:00Z",
+        "events": [],
+        "competitive_level": "Diamond League",
+        "watch_url": "https://worldathletics.org/diamond-league/doha",
+        "status": "upcoming",
+    },
+    {
+        "id": "m2",
+        "name": "Prefontaine Classic",
+        "location": "Eugene, Oregon, USA",
+        "date": "2026-05-30T16:00:00Z",
+        "events": [],
+        "competitive_level": "Diamond League",
+        "watch_url": "https://prefontaineclassic.com",
+        "status": "upcoming",
+    },
+    {
+        "id": "m3",
+        "name": "World Athletics Championships",
+        "location": "Tokyo, Japan",
+        "date": "2026-08-15T09:00:00Z",
+        "events": [],
+        "competitive_level": "World Championships",
+        "watch_url": "https://worldathletics.org/competitions/world-athletics-championships",
+        "status": "upcoming",
+    },
+]
+
+
+def _db_meet_status(date_value: datetime | None) -> str:
+    if date_value is None:
+        return "upcoming"
+    now = datetime.now(UTC)
+    meet_time = date_value.astimezone(UTC) if date_value.tzinfo else date_value.replace(tzinfo=UTC)
+    return "completed" if meet_time < now else "upcoming"
+
+
 @app.get("/athletes")
 async def athletes(
     q: str | None = Query(default=None, description="Search by name, country, or discipline"),
@@ -356,86 +438,86 @@ async def athletes(
             stmt = stmt.where(AthleteRow.status != "archived")
         stmt = stmt.limit(limit)
         rows = (await db.execute(stmt)).scalars().all()
-        pool = [
-            AthleteFull(
-                id=row.id,
-                name=row.name,
-                country=row.country_code,
-                countryName=row.country_name or "",
-                discipline=row.discipline,
-                personalBest=row.personal_best,
-                personalBestsJson=row.personal_bests_json,
-                yearOfBirth=row.year_of_birth,
-                waAthleteId=row.wa_athlete_id,
-                olympicGold=row.olympic_gold or 0,
-                olympicSilver=row.olympic_silver or 0,
-                olympicBronze=row.olympic_bronze or 0,
-                olympicGamesCount=row.olympic_games_count or 0,
-                firstOlympicGames=row.first_olympic_games,
-                profileImageUrl=row.profile_image_url,
-                biography=row.biography,
-                status=row.status,  # type: ignore[arg-type]
-                isFollowing=False,
-                recentResults=[],
-            )
-            for row in rows
-        ]
-        return Envelope(data=pool, meta=make_meta(["Athena DB", "World Athletics"], "high"))
+        if rows:
+            pool = [
+                AthleteFull(
+                    id=row.id,
+                    name=row.name,
+                    country=row.country_code,
+                    countryName=row.country_name or "",
+                    discipline=row.discipline,
+                    personalBest=row.personal_best,
+                    personalBestsJson=row.personal_bests_json,
+                    yearOfBirth=row.year_of_birth,
+                    waAthleteId=row.wa_athlete_id,
+                    olympicGold=row.olympic_gold or 0,
+                    olympicSilver=row.olympic_silver or 0,
+                    olympicBronze=row.olympic_bronze or 0,
+                    olympicGamesCount=row.olympic_games_count or 0,
+                    firstOlympicGames=row.first_olympic_games,
+                    profileImageUrl=row.profile_image_url,
+                    biography=row.biography,
+                    status=row.status,  # type: ignore[arg-type]
+                    isFollowing=False,
+                    recentResults=[],
+                )
+                for row in rows
+            ]
+            return Envelope(data=pool, meta=make_meta(["Athena DB", "World Athletics"], "high"))
+
+        # DB is configured but currently empty; return contract-safe fallback data.
+        pool = _filter_stub_athletes(_ATHLETE_POOL, q, active_only, runners_only, limit)
+        return Envelope(
+            data=pool,
+            meta=make_meta(
+                ["Athena DB", "World Athletics", "Fallback Dataset"],
+                "medium",
+                "athena_db_empty_using_stub",
+            ),
+        )
 
     # --- stub fallback (no DATABASE_URL configured) ---
-    from datetime import timedelta
-
-    cutoff = datetime.now(UTC) - timedelta(days=365)
-    pool = _ATHLETE_POOL
-
-    if runners_only:
-        pool = [a for a in pool if _is_runner(a)]
-
-    if active_only:
-
-        def _has_recent(a: AthleteFull) -> bool:
-            if not a.recentResults:
-                return False
-            dates = []
-            for r in a.recentResults:
-                try:
-                    dates.append(datetime.fromisoformat(r.date.replace("Z", "+00:00")))
-                except ValueError:
-                    pass
-            return bool(dates) and max(dates) >= cutoff
-
-        pool = [a for a in pool if _has_recent(a)]
-
-    if q:
-        ql = q.lower()
-        pool = [
-            a
-            for a in pool
-            if ql in a.name.lower() or ql in a.country.lower() or ql in a.discipline.lower()
-        ]
-
-    pool = pool[:limit]
+    pool = _filter_stub_athletes(_ATHLETE_POOL, q, active_only, runners_only, limit)
     return Envelope(data=pool, meta=make_meta(["World Athletics", "FloTrack"], "high"))
 
 
 @app.get("/meets")
 async def meets(
     db: AsyncSession | None = Depends(get_db),
-) -> Envelope[list[dict[str, str]]]:
+) -> Envelope[list[dict[str, object]]]:
     if DB_AVAILABLE and db is not None:
         rows = (await db.execute(select(MeetRow).order_by(MeetRow.date.desc()))).scalars().all()
-        data = [
-            {"id": row.id, "name": row.name, "location": row.location, "series": row.series or ""}
-            for row in rows
-        ]
-        return Envelope(data=data, meta=make_meta(["Athena DB", "World Athletics"], "high"))
+        if rows:
+            data = [
+                {
+                    "id": row.id,
+                    "name": row.name,
+                    "location": row.location,
+                    "date": (row.date.astimezone(UTC) if row.date and row.date.tzinfo else row.date)
+                    .isoformat()
+                    .replace("+00:00", "Z")
+                    if row.date
+                    else datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                    "events": [],
+                    "competitive_level": row.series or "",
+                    "watch_url": None,
+                    "status": _db_meet_status(row.date),
+                }
+                for row in rows
+            ]
+            return Envelope(data=data, meta=make_meta(["Athena DB", "World Athletics"], "high"))
+
+        return Envelope(
+            data=_MEET_FALLBACK_DATA,
+            meta=make_meta(
+                ["Athena DB", "World Athletics", "Fallback Dataset"],
+                "medium",
+                "athena_db_empty_using_stub",
+            ),
+        )
 
     # --- stub fallback ---
-    data = [
-        {"id": "m1", "name": "Doha Diamond League", "location": "Doha"},
-        {"id": "m2", "name": "Prefontaine Classic", "location": "Eugene"},
-    ]
-    return Envelope(data=data, meta=make_meta(["World Athletics"], "high"))
+    return Envelope(data=_MEET_FALLBACK_DATA, meta=make_meta(["World Athletics"], "high"))
 
 
 @app.get("/storylines")

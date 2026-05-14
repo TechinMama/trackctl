@@ -19,9 +19,9 @@ struct AthleteListView: View {
                     List {
                         Section {
                             AthenaHeroHeader(
-                                title: "Athletes",
+                                title: "Athena Performance Insights",
                                 subtitle: "Follow the competitors shaping your watchlist.",
-                                eyebrow: "Tracking"
+                                eyebrow: "Athletes"
                             )
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
@@ -94,7 +94,6 @@ struct AthleteListView: View {
                     )
                 }
             }
-            .navigationTitle("Athletes")
             .task {
                 await viewModel.loadAthletes()
             }
@@ -186,8 +185,8 @@ struct AthleteDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     AthenaHeroHeader(
-                        title: liveAthlete.name,
-                        subtitle: "\(liveAthlete.discipline) • \(liveAthlete.country)",
+                        title: "Athena Performance Insights",
+                        subtitle: "\(liveAthlete.name) • \(liveAthlete.discipline) • \(liveAthlete.country)",
                         eyebrow: "Athlete profile",
                         pills: athleteHeaderPills(for: liveAthlete)
                     )
@@ -338,7 +337,6 @@ struct AthleteDetailView: View {
                 .padding()
             }
         }
-        .navigationTitle("Athlete Details")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             athleteNotificationsEnabled = viewModel.isAthleteNotificationEnabled(id: athlete.id)
@@ -453,10 +451,8 @@ struct ResultRowView: View {
                     .fill(AthenaTheme.divider)
                     .frame(height: 1)
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .font(.caption)
-                        .foregroundStyle(AthenaTheme.teal)
-                        .padding(.top, 2)
+                    AthenaMiniMark(size: 14)
+                        .padding(.top, 1)
                     Text(insight)
                         .font(.caption)
                         .foregroundStyle(AthenaTheme.bone)

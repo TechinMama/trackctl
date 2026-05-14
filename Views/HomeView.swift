@@ -11,7 +11,7 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         AthenaHeroHeader(
-                            title: "Athena",
+                            title: "Athena Performance Insights",
                             subtitle: "Intelligent insights for modern athletics.",
                             eyebrow: "Rapid insights"
                         )
@@ -106,7 +106,6 @@ struct HomeView: View {
                     .padding(.vertical)
                 }
             }
-            .navigationTitle("Home Feed")
         }
     }
 }
@@ -129,10 +128,8 @@ struct StorylineCard: View {
                 .frame(height: 1)
 
             HStack(alignment: .top, spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.caption)
-                    .foregroundStyle(AthenaTheme.teal)
-                    .padding(.top, 2)
+                AthenaMiniMark(size: 14)
+                    .padding(.top, 1)
                 Text(storyline.aiGeneratedInsight)
                     .font(.caption)
                     .foregroundStyle(AthenaTheme.bone)

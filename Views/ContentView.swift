@@ -36,7 +36,7 @@ struct ContentView: View {
             
             SettingsView()
                 .tabItem {
-                    Label("Control", systemImage: "slider.horizontal.3")
+                    Label("Settings", systemImage: "slider.horizontal.3")
                 }
                 .tag(Tab.settings)
         }

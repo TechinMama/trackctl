@@ -12,9 +12,8 @@ struct InsightCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AthenaTheme.teal)
+                AthenaMiniMark(size: 14)
+                    .padding(.top, 1)
                 Text("AI Performance Insight")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AthenaTheme.teal)
