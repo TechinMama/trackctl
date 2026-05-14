@@ -44,9 +44,9 @@ struct SettingsView: View {
                 Form {
                     Section {
                         AthenaHeroHeader(
-                            title: "Settings",
+                            title: "Athena Performance Insights",
                             subtitle: "Intelligent controls for alerts, insights, and app behavior.",
-                            eyebrow: "Rapid insights"
+                            eyebrow: "Settings"
                         )
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
@@ -191,7 +191,6 @@ struct SettingsView: View {
                 .scrollDisabled(false)
                 .background(Color.clear)
             }
-            .navigationTitle("Settings")
         }
     }
 }

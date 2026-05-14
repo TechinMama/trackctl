@@ -11,9 +11,9 @@ struct MeetListView: View {
 
                 VStack(spacing: 16) {
                     AthenaHeroHeader(
-                        title: "Events",
+                        title: "Athena Performance Insights",
                         subtitle: "Upcoming events with location, timing, and where to watch.",
-                        eyebrow: "Rapid insights"
+                        eyebrow: "Events"
                     )
                     .padding(.horizontal)
 
@@ -96,7 +96,6 @@ struct MeetListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .navigationTitle("Events")
             .task {
                 await viewModel.loadMeets()
             }
@@ -173,8 +172,8 @@ struct MeetDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     AthenaHeroHeader(
-                        title: meet.name,
-                        subtitle: meet.location,
+                        title: "Athena Performance Insights",
+                        subtitle: "\(meet.name) • \(meet.location)",
                         eyebrow: meet.competitiveLevel
                     )
                     
@@ -233,7 +232,6 @@ struct MeetDetailView: View {
                 .padding()
             }
         }
-        .navigationTitle("Event Details")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

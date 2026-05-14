@@ -11,7 +11,7 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         AthenaHeroHeader(
-                            title: "Athena",
+                            title: "Athena Performance Insights",
                             subtitle: "Intelligent insights for modern athletics.",
                             eyebrow: "Rapid insights"
                         )
@@ -106,7 +106,6 @@ struct HomeView: View {
                     .padding(.vertical)
                 }
             }
-            .navigationTitle("Home Feed")
         }
     }
 }

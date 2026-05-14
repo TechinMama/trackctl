@@ -8,9 +8,9 @@ struct PrivacyView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     AthenaHeroHeader(
-                        title: "Privacy",
+                        title: "Athena Performance Insights",
                         subtitle: "How Athena handles your data.",
-                        eyebrow: "Transparency"
+                        eyebrow: "Privacy"
                     )
 
                     Group {
@@ -98,7 +98,6 @@ struct PrivacyView: View {
                 .padding()
             }
         }
-        .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
