@@ -17,6 +17,51 @@ Athena is inspired by strength through intelligence: disciplined, resilient, and
 
 ---
 
+## Screenshots
+
+Simulator captures from the Athena Performance Insights MVP (iPhone + iPad).
+
+### Home Feed
+Rapid insights, competitive storylines, and upcoming meets — with AI insights gated by Athena guardrails.
+
+<p align="center">
+  <img src="docs/images/screenshots/01-home-feed.png" alt="Home Feed — Rapid Insights" width="280" />
+  &nbsp;
+  <img src="docs/images/screenshots/02-home-feed-headlines.png" alt="Home Feed — Headlines and Upcoming Meets" width="280" />
+</p>
+
+### Events
+Meet awareness: upcoming / ongoing / completed, priority scoring, and event detail.
+
+<p align="center">
+  <img src="docs/images/screenshots/04-events-upcoming.png" alt="Events — Upcoming Meets" width="280" />
+  &nbsp;
+  <img src="docs/images/screenshots/05-event-detail.png" alt="Event Detail — Doha Diamond League" width="280" />
+  &nbsp;
+  <img src="docs/images/screenshots/03-events-empty.png" alt="Events — Empty state when no live meet data" width="280" />
+</p>
+
+### Settings
+Notifications, intelligent insights, refresh behavior, and event-group alerts — filtered through Athena guardrails.
+
+<p align="center">
+  <img src="docs/images/screenshots/06-settings.png" alt="Settings — iPhone" width="280" />
+</p>
+
+### iPad
+Adaptive layout for larger screens (Home Feed + Control / Settings).
+
+<p align="center">
+  <img src="docs/images/screenshots/07-home-feed-ipad.png" alt="Home Feed — iPad" width="420" />
+</p>
+<p align="center">
+  <img src="docs/images/screenshots/08-settings-ipad.png" alt="Settings — iPad" width="420" />
+</p>
+
+All screenshots live in [`docs/images/screenshots/`](docs/images/screenshots/).
+
+---
+
 ## Architecture
 Built with SwiftUI and MVVM for a clean, maintainable iOS codebase.
 
