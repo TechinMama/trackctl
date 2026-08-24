@@ -21,7 +21,7 @@ Athena is inspired by strength through intelligence: disciplined, resilient, and
 
 ## Screenshots
 
-Simulator captures from the Athena Performance Insights MVP (iPhone + iPad).
+Simulator captures from the Athena Performance Insights MVP (iPhone). Older iPad captures remain in the screenshots folder for reference.
 
 ### Home Feed
 Rapid insights, competitive storylines, and upcoming meets — with AI insights gated by Athena guardrails.
@@ -48,16 +48,6 @@ Notifications, intelligent insights, refresh behavior, and event-group alerts �
 
 <p align="center">
   <img src="docs/images/screenshots/06-settings.png" alt="Settings — iPhone" width="280" />
-</p>
-
-### iPad
-Adaptive layout for larger screens (Home Feed + Control / Settings).
-
-<p align="center">
-  <img src="docs/images/screenshots/07-home-feed-ipad.png" alt="Home Feed — iPad" width="420" />
-</p>
-<p align="center">
-  <img src="docs/images/screenshots/08-settings-ipad.png" alt="Settings — iPad" width="420" />
 </p>
 
 All screenshots live in [`docs/images/screenshots/`](docs/images/screenshots/).
