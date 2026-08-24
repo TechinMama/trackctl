@@ -33,6 +33,7 @@ targets:
     settings:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: "Athena"
         INFOPLIST_KEY_AppEnv: "$(APP_ENV)"
         INFOPLIST_KEY_AthenaAPIBaseURL: "$(ATHENA_API_BASE_URL)"
         INFOPLIST_KEY_AthenaLiveAPIEnabled: "$(ATHENA_LIVE_API_ENABLED)"
@@ -48,7 +49,8 @@ targets:
       configs:
         Debug:
           APP_ENV: debug
-          ATHENA_API_BASE_URL: "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io"
+          # Set locally via Config/Local.xcconfig (gitignored) or Xcode build setting — never commit live endpoints.
+          ATHENA_API_BASE_URL: ""
           ATHENA_LIVE_API_ENABLED: YES
           ATHENA_MANAGED_API_SETTINGS: YES
           ATHENA_REQUIRE_LIVE_DATA: YES

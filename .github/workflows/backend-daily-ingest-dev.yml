@@ -21,12 +21,13 @@ jobs:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ACR_NAME: acrathenadev
+      ACR_NAME: ${{ vars.AZURE_ACR_NAME }}
       IMAGE_NAME: athena-backend
       IMAGE_TAG: dev
-      RESOURCE_GROUP: rg-athena-dev
-      MANAGED_ENV: cae-athena-dev
-      JOB_NAME: athena-ingest-dev
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      MANAGED_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV }}
+      JOB_NAME: ${{ vars.AZURE_INGEST_JOB_NAME }}
+      ATHENA_API_BASE_URL: ${{ secrets.ATHENA_API_BASE_URL }}
 
     steps:
       - name: Checkout
@@ -92,5 +93,9 @@ jobs:
 
       - name: Verify live data endpoint
         run: |
-          URL="https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io/athletes?active_only=true&runners_only=true&limit=3"
+          if [ -z "$ATHENA_API_BASE_URL" ]; then
+            echo "Missing ATHENA_API_BASE_URL secret."
+            exit 1
+          fi
+          URL="${ATHENA_API_BASE_URL%/}/athletes?active_only=true&runners_only=true&limit=3"
           curl -fsS "$URL" | python -c "import sys, json; obj=json.load(sys.stdin); print('athletes_count=', len(obj.get('data', [])))"

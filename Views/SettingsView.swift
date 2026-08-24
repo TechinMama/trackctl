@@ -173,13 +173,13 @@ struct SettingsView: View {
                         }
 
                         SettingsCard(title: "Support", detail: nil) {
-                            if let aboutURL = URL(string: "https://athena.example.com") {
-                                Link("About Athena", destination: aboutURL)
+                            if let aboutURL = URL(string: "https://www.techntoastuncorked.com") {
+                                Link("From Tech & Toast: Uncorked", destination: aboutURL)
                             }
                             NavigationLink("Privacy Policy") {
                                 PrivacyView()
                             }
-                            if let supportURL = URL(string: "mailto:support@athena.example.com") {
+                            if let supportURL = URL(string: "mailto:techntoastuncorked@gmail.com") {
                                 Link("Contact Support", destination: supportURL)
                             }
                         }

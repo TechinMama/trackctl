@@ -1,0 +1,10 @@
+# Local Xcode build overrides (gitignored)
+# Copy to Config/Local.xcconfig and fill in your HTTPS API base URL.
+#
+# Then either:
+#   A) Include this file from the Athena target (Xcode → Build Settings → based on), or
+#   B) Paste ATHENA_API_BASE_URL into the Athena target Debug build setting.
+#
+# Never commit a real host. CI uses the ATHENA_API_BASE_URL GitHub secret.
+
+ATHENA_API_BASE_URL = https://YOUR-API-HOST.example.com

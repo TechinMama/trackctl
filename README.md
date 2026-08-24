@@ -4,7 +4,9 @@
 
 Athena Performance Insights is an iOS app that blends sports data, AI-powered insights, and competition awareness into a lightweight companion for athletes, fans, and analysts, starting with track and field and designed to scale across sports.
 
-The product name used throughout the codebase and internal tooling is **Athena**. The full consumer-facing name is **Athena Performance Insights**.
+The product name used throughout the codebase and internal tooling is **Athena**. The full consumer-facing name is **Athena Performance Insights**. **App Store release under parent brand:** see [docs/BRAND.md](docs/BRAND.md) (*Athena by Tech & Toast*).
+
+**Documentation:** [docs/README.md](docs/README.md) — vision, App Store kit, launch checklist.
 
 ---
 
@@ -100,11 +102,17 @@ This wires the committed hook at `.githooks/pre-push`, which runs iOS build + Te
 ---
 
 ## API Integration
-Athena connects to a live Azure-hosted FastAPI backend. Local fallback mode is disabled by default — all builds use the live endpoint.
+Athena connects to a FastAPI backend (typically Azure Container Apps). Builds do **not** embed a live endpoint in source.
 
-**Live backend URL:** `https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io`
+Configure the API base URL at build time:
 
-Core service endpoints:
+| Surface | How |
+|---------|-----|
+| **Local Debug** | Copy `Config/Local.xcconfig.example` → `Config/Local.xcconfig` and set `ATHENA_API_BASE_URL`, **or** set the build setting in Xcode |
+| **CI / TestFlight** | GitHub Actions secret `ATHENA_API_BASE_URL` (must be `https://…`) |
+| **Runtime** | Info.plist key `AthenaAPIBaseURL` via `INFOPLIST_KEY_AthenaAPIBaseURL` |
+
+Core service endpoints (relative to your base URL):
 
 - `GET /health`
 - `GET /athletes`
@@ -112,7 +120,7 @@ Core service endpoints:
 - `GET /events/{eventID}/results`
 - `GET /storylines`
 
-Runtime API configuration is controlled via `ATHENA_MANAGED_API_SETTINGS=YES` in build settings. All builds default to live API. URL construction uses `URLComponents` to correctly split path and query string parameters.
+Runtime API configuration is controlled via `ATHENA_MANAGED_API_SETTINGS=YES` in build settings. URL construction uses `URLComponents` to correctly split path and query string parameters.
 
 Analytics and insight contracts are documented in the architecture specification.
 
@@ -138,8 +146,14 @@ See the MVP Architecture document in this repository for full details.
 
 ## Getting Started
 1. Open the project in Xcode 16+
-2. Select the Athena target and an iOS 17+ simulator
-3. Build and run
+2. Configure API URL for local runs (required for live data):
+   - `cp Config/Local.xcconfig.example Config/Local.xcconfig`
+   - Set `ATHENA_API_BASE_URL = https://your-api-host` in that file
+   - Or set `ATHENA_API_BASE_URL` on the Athena target’s Debug build settings
+3. Select the Athena target and an iOS 17+ simulator
+4. Build and run
+
+Without a configured base URL, network calls fail closed (no hardcoded production host in the binary).
 
 ### Build Commands
 ```bash
@@ -152,8 +166,8 @@ xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS S
 ## Engineering Status (as of May 2026)
 
 ### Completed
-- Live Azure backend deployed and healthy (`/health` returns `{"status":"ok"}`)
-- All localhost fallbacks removed — live endpoint used by default in all build configs
+- Live Azure backend deployed and healthy (configure URL via secrets / local xcconfig — not committed)
+- All localhost fallbacks removed — production builds require `ATHENA_API_BASE_URL`
 - URL construction rebuilt using `URLComponents` to prevent query string encoding as path segments
 - `ATHENA_MANAGED_API_SETTINGS=YES` active in both Debug and Release
 - Tolerant Swift model decoders added for `Meet` and `CompetitiveStoryline` (handles slim API payloads gracefully)
@@ -161,7 +175,7 @@ xcodebuild -project Athena.xcodeproj -scheme Athena -destination 'platform=iOS S
 - Pre-push enforcement active via `.githooks/pre-push` → `scripts/pre_push_checks.sh`
   - Runs iOS build check, Terraform fmt/validate, backend pytest on changed files
 - Engineering rules documented in `rules.md`
-- All GitHub Actions secrets configured for TestFlight release workflow
+- GitHub Actions secrets/vars configured for TestFlight and Azure deploy workflows
 - TestFlight release workflow (`release-testflight.yml`) ready to run
 
 ### In Progress
@@ -199,7 +213,9 @@ Recommended versioning:
 2. Let CI set `CURRENT_PROJECT_VERSION` automatically per run.
 3. Cut a release tag (`v1.0.0`, `v1.0.1`) for each production candidate.
 
-Required GitHub secrets for release workflow (all configured):
+### Required GitHub configuration (maintainers)
+
+**Secrets** (never commit values):
 
 | Secret | Purpose |
 |---|---|
@@ -210,14 +226,28 @@ Required GitHub secrets for release workflow (all configured):
 | `APPSTORE_API_KEY_ID` | App Store Connect API key ID (App Manager role) |
 | `APPSTORE_API_ISSUER_ID` | App Store Connect issuer ID |
 | `APPSTORE_API_PRIVATE_KEY` | App Store Connect .p8 private key (full text, not base64) |
-| `ATHENA_API_BASE_URL` | Live backend URL (must be `https://...`) |
+| `ATHENA_API_BASE_URL` | HTTPS API base URL for Release / ingest verification |
 | `SENTRY_DSN` | Sentry DSN for crash reporting (leave empty to disable) |
+| `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` | OIDC Azure login |
+| `DATABASE_URL` | Backend DB connection (migrate/seed jobs) |
+
+**Repository variables** (non-secret Azure resource names for deploy workflows):
+
+| Variable | Purpose |
+|---|---|
+| `AZURE_ACR_NAME` | Azure Container Registry name |
+| `AZURE_RESOURCE_GROUP` | Resource group |
+| `AZURE_CONTAINER_APP_NAME` | Container App name |
+| `AZURE_CONTAINER_APP_ENV` | Container Apps managed environment |
+| `AZURE_MIGRATE_JOB_NAME` | Alembic migration job |
+| `AZURE_SEED_JOB_NAME` | Seed job |
+| `AZURE_INGEST_JOB_NAME` | Daily ingest job |
 
 Notes for `ATHENA_API_BASE_URL`:
 
-- A custom purchased domain is optional.
-- You can use the default Azure Container Apps endpoint (`https://<app>.<region>.azurecontainerapps.io`) for TestFlight and initial production.
-- If you later purchase a domain, map it to Container Apps and update `ATHENA_API_BASE_URL`.
+- Must start with `https://`.
+- Prefer a custom domain mapped to Container Apps for production.
+- Do **not** commit the live hostname in source, docs, or workflows.
 
 ## Cost Guardrails
 - Start dev with the low-traffic Terraform profile (`infra/terraform/envs/dev/dev.tfvars.example`) and scale to zero where safe.
@@ -235,12 +265,22 @@ Notes for `ATHENA_API_BASE_URL`:
 - LA28 athletics disciplines: https://hospitality.la28.org/en/event-discipline/athletics
 - MileSplit results and athlete coverage: https://www.milesplit.com/
 - Athletic.net performance and athlete coverage: https://www.athletic.net/
-- VibeCon agenda: https://vibecon.io/
-- Hugging Face account: https://huggingface.co/mccoyale
 
 These inputs support Athena across professional, collegiate, and high school competition layers so the product can surface breakout athletes before they are fully established on the professional circuit.
 
 ---
 
+## Open source under Tech & Toast™
+
+Athena Performance Insights is published as open source under the **Tech & Toast: Uncorked** brand.
+
+- **Parent brand:** [techntoastuncorked.com](https://www.techntoastuncorked.com) (company home — Athena is listed under this brand, not a separate product website)
+- **Support:** techntoastuncorked@gmail.com
+- **Sibling product:** Tech & Toast Vineyard (daily growth companion — separate repo)
+
+Do not commit live API hosts, Azure resource FQDNs, signing material, or database credentials. Use GitHub secrets / repository variables and `Config/Local.xcconfig` (gitignored).
+
+---
+
 ## License
-Copyright (c) 2026 Alexandra McCoy
+Copyright (c) 2026 Alexandra McCoy / Tech & Toast: Uncorked

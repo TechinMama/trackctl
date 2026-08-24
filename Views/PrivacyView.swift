@@ -80,8 +80,8 @@ struct PrivacyView: View {
                         Text("Questions about this privacy disclosure?")
                             .font(.subheadline)
                             .foregroundStyle(AthenaTheme.stone)
-                        if let contactURL = URL(string: "mailto:support@athena.example.com") {
-                            Link("support@athena.example.com", destination: contactURL)
+                        if let contactURL = URL(string: "mailto:techntoastuncorked@gmail.com") {
+                            Link("techntoastuncorked@gmail.com", destination: contactURL)
                                 .font(.subheadline)
                                 .foregroundStyle(AthenaTheme.teal)
                         }

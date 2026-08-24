@@ -23,7 +23,7 @@ jobs:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ACR_NAME: acrathenadev
+      ACR_NAME: ${{ vars.AZURE_ACR_NAME }}
       IMAGE_NAME: athena-backend
       IMAGE_TAG: dev
 
@@ -51,9 +51,13 @@ jobs:
 
       - name: Deploy to Container App
         env:
-          CONTAINER_APP_NAME: ca-athena-dev-backend
-          RESOURCE_GROUP: rg-athena-dev
+          CONTAINER_APP_NAME: ${{ vars.AZURE_CONTAINER_APP_NAME }}
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
         run: |
+          if [ -z "$CONTAINER_APP_NAME" ] || [ -z "$RESOURCE_GROUP" ] || [ -z "$ACR_NAME" ]; then
+            echo "Set repository variables AZURE_CONTAINER_APP_NAME, AZURE_RESOURCE_GROUP, and AZURE_ACR_NAME."
+            exit 1
+          fi
           az containerapp update \
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCE_GROUP" \
@@ -61,9 +65,9 @@ jobs:
 
       - name: Run Alembic migrations
         env:
-          RESOURCE_GROUP: rg-athena-dev
-          JOB_NAME: athena-migrate-dev
-          MANAGED_ENV: cae-athena-dev
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          JOB_NAME: ${{ vars.AZURE_MIGRATE_JOB_NAME }}
+          MANAGED_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV }}
         run: |
           ACR_USER=$(az acr credential show --name "$ACR_NAME" --query username -o tsv)
           ACR_PASS=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
@@ -123,9 +127,9 @@ jobs:
 
       - name: Seed database with test athletes
         env:
-          RESOURCE_GROUP: rg-athena-dev
-          JOB_NAME: athena-seed-dev
-          MANAGED_ENV: cae-athena-dev
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          JOB_NAME: ${{ vars.AZURE_SEED_JOB_NAME }}
+          MANAGED_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV }}
         run: |
           ACR_USER=$(az acr credential show --name "$ACR_NAME" --query username -o tsv)
           ACR_PASS=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)

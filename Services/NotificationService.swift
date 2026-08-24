@@ -35,7 +35,12 @@ class NotificationService {
     }
 
     private var apiBaseURL: URL? {
-        let raw = UserDefaults.standard.string(forKey: apiBaseURLKey) ?? "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io"
+        let fromDefaults = UserDefaults.standard.string(forKey: apiBaseURLKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let fromBundle = (Bundle.main.object(forInfoDictionaryKey: "AthenaAPIBaseURL") as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let raw = !fromDefaults.isEmpty ? fromDefaults : fromBundle
+        guard !raw.isEmpty else { return nil }
         return URL(string: raw)
     }
 

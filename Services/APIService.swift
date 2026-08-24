@@ -66,7 +66,6 @@ actor APIService {
     private let liveAPIEnabledKey = "athena.liveAPIEnabled"
     private let requireLiveDataKey = "athena.requireLiveData"
     private let intelligentInsightsEnabledKey = "athena.intelligentInsightsEnabled"
-    private let defaultDebugBaseURL = "https://ca-athena-dev-backend.orangetree-abd9b5a7.eastus2.azurecontainerapps.io"
     private let staleInterval: TimeInterval = 15 * 60
     private let cacheFolderName = "athena-api-cache"
 
@@ -110,16 +109,8 @@ actor APIService {
     }
 
     private var configuredBaseURLString: String {
-        let value = (Bundle.main.object(forInfoDictionaryKey: "AthenaAPIBaseURL") as? String ?? "")
+        (Bundle.main.object(forInfoDictionaryKey: "AthenaAPIBaseURL") as? String ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        if !value.isEmpty {
-            return value
-        }
-#if DEBUG
-        return defaultDebugBaseURL
-#else
-        return ""
-#endif
     }
 
     private var baseURL: URL? {
